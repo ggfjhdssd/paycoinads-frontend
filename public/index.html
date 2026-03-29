@@ -520,6 +520,27 @@
             console.error('Failed to initialize Adsgram:', e);
         }
 
+        // ==================== VIP 1-hour session tracker ====================
+        const VIP_SESSION_KEY = 'vipAutoStart';
+        const VIP_SESSION_HOUR = 60 * 60 * 1000;
+        function getVipSessionStart() {
+            const v = sessionStorage.getItem(VIP_SESSION_KEY);
+            return v ? parseInt(v) : 0;
+        }
+        function setVipSessionStart() {
+            if (!sessionStorage.getItem(VIP_SESSION_KEY)) {
+                sessionStorage.setItem(VIP_SESSION_KEY, Date.now().toString());
+            }
+        }
+        function clearVipSession() {
+            sessionStorage.removeItem(VIP_SESSION_KEY);
+        }
+        function isVipSessionExpired() {
+            const start = getVipSessionStart();
+            if (!start) return false;
+            return Date.now() - start >= VIP_SESSION_HOUR;
+        }
+
         // ==================== Home VIP Auto-watch state ====================
         let homeAutoWatching = false;
         let homeAutoStopped = false;
@@ -642,7 +663,13 @@
 
             // Auto-start home VIP watch if vipMode on
             if (data.vipMode && data.vipExpiry && new Date(data.vipExpiry) > new Date()) {
-                if (!homeAutoWatching) startHomeAutoWatch();
+                if (isVipSessionExpired()) {
+                    // 1-hour session expired — disable VIP
+                    disableVipModeOnServer();
+                    clearVipSession();
+                } else if (!homeAutoWatching) {
+                    startHomeAutoWatch();
+                }
             }
             
             applyCooldowns(data);
@@ -676,6 +703,23 @@
             }
         }
 
+        // ===== Disable VIP on server (called by 1-hour auto-off) =====
+        async function disableVipModeOnServer() {
+            try {
+                // Only call toggle if VIP is currently ON
+                if (userDataCache && userDataCache.vipMode) {
+                    await fetch(`${API_BASE}/vip/toggle`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData }
+                    });
+                    if (userDataCache) userDataCache.vipMode = false;
+                    updateVipUI(userDataCache);
+                }
+                homeAutoStopped = true;
+                homeAutoWatching = false;
+            } catch(e) { console.error('Failed to disable VIP:', e); }
+        }
+
         async function handleVipToggle() {
             if (!userDataCache) return;
             const now = new Date();
@@ -697,11 +741,20 @@
                 if (res.ok && data.success) {
                     userDataCache.vipMode = data.vipMode;
                     updateVipUI(userDataCache);
-                    const msg = data.vipMode ? '✅ VIP Mode ဖွင့်လိုက်ပါပြီ' : '⏸ VIP Mode ပိတ်လိုက်ပါပြီ';
-                    showMsg(msg);
+                    if (data.vipMode) {
+                        // VIP turned ON — start 1-hour session and auto-watch
+                        setVipSessionStart();
+                        showMsg('✅ VIP Mode ဖွင့်လိုက်ပါပြီ • 1 နာရီ Auto Watch စတင်မည်');
+                        if (!homeAutoWatching) startHomeAutoWatch();
+                    } else {
+                        // VIP turned OFF manually — clear session
+                        clearVipSession();
+                        homeAutoStopped = true;
+                        homeAutoWatching = false;
+                        showMsg('⏸ VIP Mode ပိတ်လိုက်ပါပြီ');
+                    }
                 } else {
                     showMsg(data.error || 'Error', true);
-                    // Revert checkbox
                     document.getElementById('vipToggleCheck').checked = userDataCache.vipMode;
                 }
             } catch(e) {
@@ -924,6 +977,7 @@
             if (homeAutoWatching) return;
             homeAutoWatching = true;
             homeAutoStopped = false;
+            setVipSessionStart(); // Start 1-hour session tracking
             await runHomeAutoLoop();
         }
 
@@ -931,27 +985,42 @@
 
         async function runHomeAutoLoop() {
             if (homeAutoStopped) { homeAutoWatching = false; return; }
-            // Get available tasks from cooldown data
             if (!userDataCache) { homeAutoWatching = false; return; }
+
+            // ===== 1-hour auto-off check =====
+            if (isVipSessionExpired()) {
+                showHomeToast('⏰ 1 နာရီပြည့်ပါပြီ - VIP Auto ပိတ်မည်', 'info', 4000);
+                await disableVipModeOnServer();
+                clearVipSession();
+                return;
+            }
+
             const now = Date.now();
             const taskCooldown = 15 * 60 * 1000;
             const available = HOME_TASK_IDS.filter(tid => {
                 const lastClaim = userDataCache.tasks?.[tid] || 0;
                 return (now - lastClaim) >= taskCooldown;
             });
+
             if (available.length === 0) {
+                // No home tasks ready — navigate to earn tab to watch earn ads
+                showHomeToast('🎬 Earn tab ကြော်ငြာကြည့်ရန် သွားနေသည်...', 'info', 2000);
                 homeAutoWatching = false;
+                await sleep2(2000);
+                window.location.href = '/earn.html';
                 return;
             }
+
             const taskId = available[0];
             const blockId = HOME_TASK_BLOCK_IDS[taskId];
             const ctrl = getHomeAdCtrl(blockId);
             if (!ctrl) { homeAutoWatching = false; return; }
 
+            showHomeToast(`🤖 Home ${taskId} ကြည့်နေသည်...`, 'info', 3000);
+
             try {
                 const result = await ctrl.show();
                 if (result && result.done) {
-                    // Wait 2 seconds, then claim
                     await sleep2(2000);
                     const url = `${API_BASE}/adsgram-reward?userId=${currentUserId}&type=task&taskId=${taskId}&source=home`;
                     const res = await fetch(url);
@@ -966,7 +1035,6 @@
             } catch(e) {
                 console.error('Home auto ad error:', e);
             }
-            // 2 second gap before next task
             await sleep2(2000);
             if (!homeAutoStopped) await runHomeAutoLoop();
         }

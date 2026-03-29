@@ -153,11 +153,11 @@
     <!-- All done box -->
     <div class="all-done-box" id="allDoneBox">
         <h3>✅ အားလုံးပြီးပါပြီ!</h3>
-        <p>Cooldown မရှိသောTask အားလုံး ပြီးပါပြီ<br>2 နာရီနောက် 0/4 ပြန်စမည်</p>
+        <p>Cooldown မရှိသောTask အားလုံး ပြီးပါပြီ<br>20 မိနစ်နောက် 0/4 ပြန်စမည်</p>
     </div>
 
     <div class="tasks-grid" id="tasksGrid"></div>
-    <div class="footer">Task တစ်ခုကို 4 ကြိုင်ကြည့်ရသည် • ကြည့်ပြီး 1 မိနစ်ကြာ ဆက်ကြည့်ရသည် • 4/4 ဖြစ်ရင် 2 နာရီနောက် ပြန်စသည်</div>
+    <div class="footer">Task တစ်ခုကို 4 ကြိုင်ကြည့်ရသည် • ကြည့်ပြီး 1 မိနစ်ကြာ ဆက်ကြည့်ရသည် • 4/4 ဖြစ်ရင် 20 မိနစ်နောက် ပြန်စသည်</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -174,6 +174,28 @@ let taskStatus = {};
 let isAutoWatching = false;
 let autoWatchStopped = false;
 
+// ===== VIP 1-hour session tracker =====
+const VIP_SESSION_KEY = 'vipAutoStart';
+const VIP_SESSION_HOUR = 60 * 60 * 1000; // 1 hour
+
+function getVipSessionStart() {
+    const v = sessionStorage.getItem(VIP_SESSION_KEY);
+    return v ? parseInt(v) : 0;
+}
+function setVipSessionStart() {
+    if (!sessionStorage.getItem(VIP_SESSION_KEY)) {
+        sessionStorage.setItem(VIP_SESSION_KEY, Date.now().toString());
+    }
+}
+function clearVipSession() {
+    sessionStorage.removeItem(VIP_SESSION_KEY);
+}
+function isVipSessionExpired() {
+    const start = getVipSessionStart();
+    if (!start) return false;
+    return Date.now() - start >= VIP_SESSION_HOUR;
+}
+
 // ==================== Task configs (blockId per task) ====================
 const TASK_CONFIGS = [
     { id: 'task1', label: 'Task 1', icon: '🎬', blockId: '23898' },
@@ -185,7 +207,6 @@ const TASK_CONFIGS = [
     { id: 'task7', label: 'Task 7', icon: '▶️',  blockId: '23919' }
 ];
 
-// blockId별 AdController cache
 const adControllers = {};
 function getAdController(blockId) {
     if (adControllers[blockId]) return adControllers[blockId];
@@ -197,7 +218,6 @@ function getAdController(blockId) {
     } catch(e) { console.error('Adsgram init error blockId', blockId, e); }
     return null;
 }
-// Pre-init all controllers
 window.addEventListener('load', () => {
     TASK_CONFIGS.forEach(t => getAdController(t.blockId));
 });
@@ -219,7 +239,7 @@ function updateAvatar(photoUrl) {
         : '💰';
 }
 
-// ==================== 20-second overlay with auto-dismiss ====================
+// ==================== 20-second overlay ====================
 function showAdWaitOverlay(reward, onDone) {
     const overlay = document.getElementById('adWaitOverlay');
     const countdownEl = document.getElementById('waitCountdown');
@@ -241,7 +261,6 @@ function showAdWaitOverlay(reward, onDone) {
             subText.textContent = 'Coin ရရှိပြီးပါပြီ!';
             coinText.textContent = `+${reward} 🪙`;
             coinText.classList.add('show');
-            // auto close after 1.5s
             setTimeout(() => {
                 overlay.classList.remove('show');
                 if (onDone) onDone();
@@ -260,7 +279,6 @@ function fmtTime(ms) {
 }
 
 function renderTasks() {
-    const now = Date.now();
     let html = '';
     TASK_CONFIGS.forEach(task => {
         const s = taskStatus[task.id] || { currentCount: 0, maxCount: 4, reward: 40, watchCooldownRemaining: 0, dailyResetIn: 0 };
@@ -313,7 +331,6 @@ async function startWatching(task) {
     try {
         const result = await ctrl.show();
         if (result && result.done) {
-            // show 20s overlay, then claim
             showAdWaitOverlay(s.reward || 40, async () => {
                 await claimReward(task.id, s.reward || 40);
             });
@@ -341,13 +358,12 @@ async function claimReward(taskId, reward) {
                 currentUser.coins = data.newCoins;
                 document.getElementById('totalCoins').textContent = currentUser.coins.toLocaleString();
             }
-            // Update local status
             if (taskStatus[taskId]) {
                 taskStatus[taskId].currentCount = data.currentCount;
                 taskStatus[taskId].lastClaim = data.lastClaim;
                 taskStatus[taskId].watchCooldownRemaining = taskStatus[taskId].watchCooldown || 60000;
                 if (data.currentCount >= taskStatus[taskId].maxCount) {
-                    taskStatus[taskId].dailyResetIn = 2 * 60 * 60 * 1000;
+                    taskStatus[taskId].dailyResetIn = 20 * 60 * 1000;
                 }
             }
             showToast(`✅ +${reward} Coins ရရှိပြီး!`, 'success');
@@ -364,6 +380,16 @@ async function claimReward(taskId, reward) {
     }
 }
 
+// ==================== Disable VIP on server ====================
+async function disableVipOnServer() {
+    try {
+        await fetch(`${API_BASE}/vip/toggle`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData }
+        });
+    } catch(e) { console.error('Failed to disable VIP:', e); }
+}
+
 // ==================== VIP AUTO WATCH ====================
 function getAvailableForAuto() {
     return TASK_CONFIGS.filter(task => {
@@ -377,6 +403,7 @@ async function startAutoWatch() {
     if (isAutoWatching) return;
     isAutoWatching = true;
     autoWatchStopped = false;
+    setVipSessionStart(); // track 1-hour session
     document.getElementById('vipAutoBanner').style.display = 'flex';
     document.getElementById('autoProgress').classList.add('show');
     document.getElementById('allDoneBox').classList.remove('show');
@@ -385,6 +412,16 @@ async function startAutoWatch() {
 
 async function runAutoLoop() {
     if (autoWatchStopped) { stopAutoWatch(); return; }
+
+    // ===== 1-hour auto-off check =====
+    if (isVipSessionExpired()) {
+        showToast('⏰ 1 နာရီပြည့်ပါပြီ - VIP Auto ပိတ်မည်', 'info', 4000);
+        await disableVipOnServer();
+        clearVipSession();
+        stopAutoWatch();
+        return;
+    }
+
     await fetchTaskStatus();
     const available = getAvailableForAuto();
     renderAutoSteps(null);
@@ -394,13 +431,17 @@ async function runAutoLoop() {
             const s = taskStatus[t.id];
             return s && s.currentCount >= s.maxCount;
         });
+
         if (allFull) {
-            document.getElementById('autoStatusText').textContent = 'အားလုံးပြီးပါပြီ! 🎉';
+            // All earn tasks 4/4 — navigate to home tab to watch home ads while earn resets
+            document.getElementById('autoStatusText').textContent = 'အားလုံးပြည့်ပြီ! Home tab သို့ ပြန်သွားနေသည်...';
             document.getElementById('allDoneBox').classList.add('show');
-            stopAutoWatch();
+            await sleep(2500);
+            window.location.href = '/';
             return;
         }
-        // find soonest cooldown
+
+        // Some tasks on between-watch cooldown — find soonest
         let soonest = null;
         TASK_CONFIGS.forEach(t => {
             const s = taskStatus[t.id];
@@ -409,9 +450,9 @@ async function runAutoLoop() {
             if (cd > 0 && (!soonest || cd < soonest)) soonest = cd;
         });
         if (soonest && soonest > 0) {
-            const mins = Math.ceil(soonest / 60000);
-            document.getElementById('autoStatusText').textContent = `${mins} မိနစ်နောက် ဆက်ကြည့်မည်...`;
-            await sleep(soonest + 1500);
+            const secs = Math.ceil(soonest / 1000);
+            document.getElementById('autoStatusText').textContent = `${secs}s နောက် ဆက်ကြည့်မည်...`;
+            await sleep(soonest + 1000);
             if (!autoWatchStopped) await runAutoLoop();
         } else {
             stopAutoWatch();
@@ -425,7 +466,7 @@ async function runAutoLoop() {
 
     await watchOneAuto(next);
     if (!autoWatchStopped) {
-        await sleep(2000); // 2 second gap between tasks
+        await sleep(2000);
         await runAutoLoop();
     }
 }
@@ -439,7 +480,6 @@ async function watchOneAuto(task) {
     try {
         const result = await ctrl.show();
         if (result && result.done) {
-            // 20s overlay, auto-dismiss, then claim
             await new Promise(resolve => {
                 showAdWaitOverlay(s?.reward || 40, async () => {
                     await claimReward(task.id, s?.reward || 40);
@@ -493,9 +533,17 @@ async function fetchUser() {
             currentUser = data;
             document.getElementById('totalCoins').textContent = data.coins.toLocaleString();
             updateAvatar(data.photoUrl);
+            // Check if VIP is active and session not expired
             if (data.vipMode && !isAutoWatching) {
-                await fetchTaskStatus();
-                startAutoWatch();
+                if (isVipSessionExpired()) {
+                    // Session expired — disable VIP
+                    await disableVipOnServer();
+                    clearVipSession();
+                } else if (getVipSessionStart() > 0) {
+                    // VIP active and came from home auto-navigate — start auto
+                    await fetchTaskStatus();
+                    startAutoWatch();
+                }
             }
         }
     } catch(e) { console.error('fetchUser error:', e); }
@@ -517,7 +565,6 @@ function goBack() { window.location.href = '/'; }
 // Live timer refresh
 setInterval(() => {
     if (Object.keys(taskStatus).length > 0) {
-        // decrement local cooldowns
         TASK_CONFIGS.forEach(t => {
             if (taskStatus[t.id]) {
                 if (taskStatus[t.id].watchCooldownRemaining > 0)
@@ -527,6 +574,14 @@ setInterval(() => {
             }
         });
         renderTasks();
+    }
+    // Check 1-hour auto-off every second
+    if (isAutoWatching && isVipSessionExpired()) {
+        showToast('⏰ 1 နာရီပြည့်ပါပြီ - VIP Auto ပိတ်မည်', 'info', 4000);
+        disableVipOnServer().then(() => {
+            clearVipSession();
+            stopAutoWatch();
+        });
     }
 }, 1000);
 
