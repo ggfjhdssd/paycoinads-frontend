@@ -1004,6 +1004,8 @@
                     const errTxt = await rewardRes.text();
                     if (rewardRes.status === 400 && errTxt.includes('cooldown')) {
                         showHomeToast('Cooldown မကုန်သေးပါ - နည်းနည်းစောင့်ပါ', 'error', 4000);
+                        // Restore button so user can try again after cooldown
+                        if (clickedBtn) { clickedBtn.disabled = false; clickedBtn.innerText = taskType === 'daily' ? 'Check-in' : 'Get +45'; }
                         // Refresh from server to get accurate cooldown
                         fetchUser();
                     } else {

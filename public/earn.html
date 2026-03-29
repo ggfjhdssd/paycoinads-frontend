@@ -153,11 +153,16 @@
     <!-- All done box -->
     <div class="all-done-box" id="allDoneBox">
         <h3>✅ အားလုံးပြီးပါပြီ!</h3>
-        <p>Cooldown မရှိသောTask အားလုံး ပြီးပါပြီ<br>20 မိနစ်နောက် 0/4 ပြန်စမည်</p>
+        <p>Task အားလုံး 4/4 ပြည့်သွားပြီ</p>
+        <div id="resetTimerBox" style="margin-top:12px;display:none;">
+            <div style="font-size:13px;color:#8e8e9d;margin-bottom:6px;">⏰ 0/4 ပြန်စရန် ကျန်ချိန်</div>
+            <div id="resetTimerDisplay" style="font-size:28px;font-weight:800;color:#ffd700;letter-spacing:2px;">10:00</div>
+            <div style="font-size:11px;color:#8e8e9d;margin-top:4px;">10 မိနစ်ပြည့်ရင် counter ပြန်ဆြတ်မည်</div>
+        </div>
     </div>
 
     <div class="tasks-grid" id="tasksGrid"></div>
-    <div class="footer">Task တစ်ခုကို 4 ကြိုင်ကြည့်ရသည် • ကြည့်ပြီး 1 မိနစ်ကြာ ဆက်ကြည့်ရသည် • 4/4 ဖြစ်ရင် 20 မိနစ်နောက် ပြန်စသည်</div>
+    <div class="footer">Task တစ်ခုကို 4 ကြိုင်ကြည့်ရသည် • ကြည့်ပြီး 1 မိနစ်ကြာ ဆက်ကြည့်ရသည် • 4/4 ဖြစ်ရင် 10 မိနစ်နောက် ပြန်စသည်</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -522,9 +527,63 @@ function stopAutoWatch() {
     renderTasks();
 }
 
+// ==================== Reset Timer ====================
+let resetTimerInterval = null;
+
+function updateResetTimer() {
+    // Find the task with the earliest firstClaimTime that is still full (4/4)
+    let earliestFirstClaim = null;
+    const DAILY_COOLDOWN = 10 * 60 * 1000; // 10 minutes
+
+    TASK_CONFIGS.forEach(t => {
+        const s = taskStatus[t.id];
+        if (!s) return;
+        if (s.currentCount >= s.maxCount && s.firstClaimTime > 0) {
+            if (!earliestFirstClaim || s.firstClaimTime < earliestFirstClaim) {
+                earliestFirstClaim = s.firstClaimTime;
+            }
+        }
+    });
+
+    const allFull = TASK_CONFIGS.every(t => {
+        const s = taskStatus[t.id];
+        return s && s.currentCount >= s.maxCount;
+    });
+
+    const allDoneBox = document.getElementById('allDoneBox');
+    const resetTimerBox = document.getElementById('resetTimerBox');
+    const resetTimerDisplay = document.getElementById('resetTimerDisplay');
+
+    if (allFull && earliestFirstClaim) {
+        allDoneBox.classList.add('show');
+        resetTimerBox.style.display = 'block';
+
+        // Calculate time remaining until reset
+        const elapsed = Date.now() - earliestFirstClaim;
+        const remaining = Math.max(0, DAILY_COOLDOWN - elapsed);
+
+        if (remaining <= 0) {
+            resetTimerDisplay.textContent = '00:00';
+            resetTimerDisplay.style.color = '#3cba92';
+            // Auto-refresh task status when timer hits 0
+            fetchTaskStatus();
+        } else {
+            const mins = Math.floor(remaining / 60000);
+            const secs = Math.ceil((remaining % 60000) / 1000);
+            resetTimerDisplay.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+            resetTimerDisplay.style.color = '#ffd700';
+        }
+    } else {
+        allDoneBox.classList.remove('show');
+        resetTimerBox.style.display = 'none';
+    }
+}
+
+
+
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// ==================== Fetch ====================
+
 async function fetchUser() {
     try {
         const res = await fetch(`${API_BASE}/user`, { headers: { 'X-Telegram-Init-Data': initData } });
@@ -574,6 +633,7 @@ setInterval(() => {
             }
         });
         renderTasks();
+        updateResetTimer();
     }
     // Check 1-hour auto-off every second
     if (isAutoWatching && isVipSessionExpired()) {
