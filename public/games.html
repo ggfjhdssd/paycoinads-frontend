@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    // ═══════════════════════════════════════
+    // API Base URL — set by Vercel env var
+    // VERCEL env: VITE_API_URL = https://your-backend.onrender.com
+    // ═══════════════════════════════════════
+    window.__API_BASE__ = "%%VITE_API_URL%%";
+  </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayCoinAds • Games</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Pyidaungsu&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Pyidaungsu', sans-serif;
+        }
+
+        body {
+            background: #121212;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        /* Parallax Background */
+        .parallax-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .glow-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.6;
+            animation: floatShape 20s infinite alternate ease-in-out;
+        }
+
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 215, 0, 0.15);
+            top: -100px;
+            left: -100px;
+        }
+
+        .shape-2 {
+            width: 400px;
+            height: 400px;
+            background: rgba(60, 186, 146, 0.1);
+            bottom: -150px;
+            right: -100px;
+            animation-delay: -5s;
+        }
+
+        .shape-3 {
+            width: 250px;
+            height: 250px;
+            background: rgba(255, 165, 0, 0.12);
+            top: 40%;
+            left: 50%;
+            animation-delay: -10s;
+        }
+
+        @keyframes floatShape {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            50% {
+                transform: translate(30px, -50px) scale(1.1);
+            }
+            100% {
+                transform: translate(-40px, 40px) scale(0.9);
+            }
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            background: rgba(30, 30, 30, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            border-radius: 30px;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-balance {
+            background: linear-gradient(145deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.05));
+            backdrop-filter: blur(12px);
+            padding: 6px 14px;
+            border-radius: 40px;
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 700;
+            font-size: 16px;
+            color: #ffd700;
+        }
+
+        /* Back Button */
+        .back-button {
+            position: fixed;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            color: #ffd700;
+            padding: 12px;
+            border-radius: 30px;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+            z-index: 99;
+            font-weight: 600;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 215, 0, 0.2);
+            transform: translateX(-50%) scale(1.02);
+        }
+
+        /* Main Container */
+        .container {
+            width: 100%;
+            max-width: 420px;
+            padding: 150px 15px 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Dashboard Button */
+        .dashboard-btn {
+            width: 100%;
+            background: rgba(255, 215, 0, 0.15);
+            border: 1px solid #ffd700;
+            padding: 12px;
+            border-radius: 40px;
+            color: #ffd700;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            text-align: center;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 0 10px rgba(255,215,0,0.3);
+        }
+
+        .dashboard-btn:hover {
+            background: rgba(255, 215, 0, 0.25);
+            transform: scale(1.02);
+            box-shadow: 0 0 15px rgba(255,215,0,0.5);
+        }
+
+        /* Two-column Grid */
+        .games-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .game-card {
+            background: #1e1e1e;
+            padding: 20px 12px;
+            border-radius: 24px;
+            text-align: center;
+            border: 2px solid #ffd700;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
+            perspective: 500px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(255, 215, 0, 0.2);
+            border-color: #ffd700;
+        }
+
+        .game-card:active {
+            transform: scale(0.97);
+        }
+
+        .animation-box {
+            position: relative;
+            height: 120px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        /* Lucky Wheel Animation */
+        .preview-wheel {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 4px solid #ffd700;
+            background: conic-gradient(#ffd700 0deg 45deg, #ff8c00 45deg 90deg, #ff6b6b 90deg 135deg, #4ecdc4 135deg 180deg, #a8e6cf 180deg 225deg, #ffd3b6 225deg 270deg, #ffaaa5 270deg 315deg, #ff8b94 315deg 360deg);
+            animation: preview-spin 3s linear infinite;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .preview-pointer {
+            position: absolute;
+            top: -5px;
+            color: #ffd700;
+            font-size: 24px;
+            z-index: 10;
+            filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5));
+            animation: pointer-pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pointer-pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+        }
+
+        @keyframes preview-spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 3D Coin Rain Animation */
+        .coin-rain-container {
+            position: relative;
+            height: 120px;
+            width: 100%;
+        }
+
+        .main-coin-preview-3d {
+            font-size: 50px;
+            z-index: 2;
+            filter: drop-shadow(0 0 15px #ffd700);
+            animation: flip3d 2s linear infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .rain-coin {
+            position: absolute;
+            top: -30px;
+            font-size: 20px;
+            z-index: 1;
+            animation: rain-fall-3d 2.2s linear infinite;
+            opacity: 0;
+            filter: drop-shadow(0 0 5px #ffd700);
+        }
+
+        .rain-coin:nth-child(1) {
+            left: 15%;
+            animation-delay: 0s;
+        }
+
+        .rain-coin:nth-child(2) {
+            left: 45%;
+            animation-delay: 0.4s;
+        }
+
+        .rain-coin:nth-child(3) {
+            left: 75%;
+            animation-delay: 1.1s;
+        }
+
+        .rain-coin:nth-child(4) {
+            left: 25%;
+            animation-delay: 0.7s;
+        }
+
+        .rain-coin:nth-child(5) {
+            left: 80%;
+            animation-delay: 1.4s;
+        }
+
+        .rain-coin:nth-child(6) {
+            left: 60%;
+            animation-delay: 0.2s;
+        }
+
+        @keyframes rain-fall-3d {
+            0% {
+                top: -30px;
+                opacity: 0;
+                transform: rotateY(0deg) translateX(0);
+            }
+
+            15% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 1;
+            }
+
+            100% {
+                top: 130px;
+                opacity: 0;
+                transform: rotateY(720deg) rotateZ(180deg) translateX(10px);
+            }
+        }
+
+        @keyframes flip3d {
+            0% {
+                transform: translate(-50%, -50%) rotateY(0deg) scale(1);
+            }
+
+            50% {
+                transform: translate(-50%, -50%) rotateY(180deg) scale(1.15);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) rotateY(360deg) scale(1);
+            }
+        }
+
+        .game-info {
+            width: 100%;
+        }
+
+        .game-info h3 {
+            color: #fff;
+            font-size: 16px;
+            margin: 8px 0 4px;
+            font-weight: 600;
+        }
+
+        .game-info p {
+            color: #ffd700;
+            font-size: 11px;
+            margin: 0;
+            opacity: 0.8;
+            letter-spacing: 0.5px;
+        }
+
+        /* Invite Button */
+        .invite-button {
+            width: 100%;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            border: none;
+            padding: 14px;
+            border-radius: 40px;
+            color: #121212;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 10px;
+            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.3);
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .invite-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(255, 215, 0, 0.4);
+        }
+
+        .invite-button:active {
+            transform: scale(0.97);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            color: #5e5e71;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="parallax-bg">
+        <div class="glow-shape shape-1"></div>
+        <div class="glow-shape shape-2"></div>
+        <div class="glow-shape shape-3"></div>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <h1>🎮 Games</h1>
+        <div class="header-balance">
+            <span>🪙</span>
+            <span id="totalCoins">0</span>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="back-button" onclick="goBack()">
+        ← Back to Home
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Dashboard Button -->
+        <div class="dashboard-btn" onclick="window.location.href='/dashboard.html'">
+            📊 Leaderboard Dashboard
+        </div>
+
+        <!-- Two-column Grid -->
+        <div class="games-grid">
+            <!-- Lucky Wheel Card -->
+            <div class="game-card" onclick="window.location.href='/lucky-wheel/'">
+                <div class="animation-box">
+                    <div class="preview-pointer">▼</div>
+                    <div class="preview-wheel"></div>
+                </div>
+                <div class="game-info">
+                    <h3>Lucky Wheel</h3>
+                    <p>Play Now</p>
+                </div>
+            </div>
+
+            <!-- Coin Clicker Card -->
+            <div class="game-card" onclick="window.location.href='/coin-clicker/'">
+                <div class="animation-box coin-rain-container">
+                    <div class="rain-coin">🪙</div>
+                    <div class="rain-coin">🪙</div>
+                    <div class="rain-coin">🪙</div>
+                    <div class="rain-coin">🪙</div>
+                    <div class="rain-coin">🪙</div>
+                    <div class="rain-coin">🪙</div>
+                    <div class="main-coin-preview-3d">🪙</div>
+                </div>
+                <div class="game-info">
+                    <h3>Coin Clicker</h3>
+                    <p>Play Now</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invite Button -->
+        <button class="invite-button" onclick="shareInvite()">
+            👥 Invite friends to play
+        </button>
+
+        <div class="footer">
+            More games coming soon...
+        </div>
+    </div>
+
+    <script>
+        // ==================== VPN Check on Page Load ====================
+        (async function() {
+            try {
+                const initData = window.Telegram?.WebApp?.initData || '';
+                const response = await fetch((window.__API_BASE__ || '') + '/api/check-vpn', {
+                    headers: { 'X-Telegram-Init-Data': initData }
+                });
+                const data = await response.json();
+                
+                if (!data.allowed) {
+                    window.location.href = '/vpn.html';
+                }
+            } catch (error) {
+                console.error('VPN check failed:', error);
+                // On error, allow access (fallback)
+            }
+        })();
+
+        const API_BASE = (window.__API_BASE__ || '') + '/api';
+        const tg = window.Telegram?.WebApp;
+        let currentUserId = null;
+
+        if (tg) {
+            tg.expand();
+            tg.ready();
+            console.log('Telegram WebApp initialized');
+        }
+
+        const initData = tg?.initData || '';
+
+        async function shareInvite() {
+            if (!currentUserId) {
+                try {
+                    const response = await fetch(`${API_BASE}/user`, {
+                        headers: { 'X-Telegram-Init-Data': initData }
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        currentUserId = data.userId;
+                    } else {
+                        alert('ကျေးဇူးပြု၍ ခဏစောင့်ပါ... User data ရယူနေဆဲဖြစ်သည်။');
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error fetching user:', error);
+                    alert('ကျေးဇူးပြု၍ ခဏစောင့်ပါ...');
+                    return;
+                }
+            }
+            
+            const shareUrl = `https://t.me/paycoinmm_bot?start=${currentUserId}`;
+            const shareText = `ဖုန်းလေးပွတ်ရင်း အပိုဝင်ငွေ ရှာချင်သူများအတွက် PayCoinAds 🐻\n\nကျွန်တော့်ရဲ့ Link ကနေ ဝင်ဆော့ရုံနဲ့ Coins တွေ စုပြီး ငွေထုတ်လို့ရပြီနော်! အခုပဲ စမ်းကြည့်လိုက်ပါ။ 👇\n\n${shareUrl}`;
+            const fullLink = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+            
+            if (tg && tg.openTelegramLink) {
+                tg.openTelegramLink(fullLink);
+            } else {
+                window.open(fullLink, '_blank');
+            }
+        }
+
+        function goBack() {
+            window.location.href = '/';
+        }
+
+        async function fetchUserData() {
+            try {
+                const response = await fetch(`${API_BASE}/user`, {
+                    headers: { 'X-Telegram-Init-Data': initData }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('totalCoins').textContent = data.coins.toLocaleString();
+                    currentUserId = data.userId;
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
+        }
+
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'COINS_UPDATED') {
+                document.getElementById('totalCoins').textContent = event.data.coins.toLocaleString();
+            }
+        });
+
+        fetchUserData();
+        setInterval(fetchUserData, 30000);
+    </script>
+</body>
+</html>

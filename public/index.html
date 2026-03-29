@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    // ═══════════════════════════════════════
+    // API Base URL — set by Vercel env var
+    // VERCEL env: VITE_API_URL = https://your-backend.onrender.com
+    // ═══════════════════════════════════════
+    window.__API_BASE__ = "%%VITE_API_URL%%";
+  </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayCoinAds • Premium</title>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Adsgram SDK -->
+    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Pyidaungsu&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: 'Inter', 'Pyidaungsu', sans-serif; 
+            background: #0a0b0e; 
+            color: #fff; 
+            display: flex; 
+            justify-content: center; 
+            min-height: 100vh; 
+            overflow-x: hidden; 
+            position: relative;
+        }
+
+        .parallax-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .glow-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.6;
+            animation: floatShape 20s infinite alternate ease-in-out;
+        }
+        .shape-1 { width: 300px; height: 300px; background: rgba(255, 215, 0, 0.15); top: -100px; left: -100px; }
+        .shape-2 { width: 400px; height: 400px; background: rgba(60, 186, 146, 0.1); bottom: -150px; right: -100px; animation-delay: -5s; }
+        .shape-3 { width: 250px; height: 250px; background: rgba(255, 165, 0, 0.12); top: 40%; left: 50%; animation-delay: -10s; }
+        
+        @keyframes floatShape {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -50px) scale(1.1); }
+            100% { transform: translate(-40px, 40px) scale(0.9); }
+        }
+
+        .container { width: 100%; max-width: 420px; padding: 16px 12px 100px; position: relative; z-index: 1; }
+
+        .premium-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+            background: rgba(20,22,27,0.6); backdrop-filter: blur(16px); padding: 10px 16px;
+            border-radius: 30px; border: 1px solid rgba(255,215,0,0.15); box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            animation: slideDown 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .header-avatar { width: 40px; height: 40px; background: linear-gradient(145deg, #2a2a3c, #1a1a28); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; border: 2px solid rgba(255,215,0,0.3); overflow: hidden; }
+        
+        .header-avatar img, .avatar-large img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid rgba(255,215,0,0.6);
+            box-shadow: 0 0 15px rgba(255,215,0,0.2);
+        }
+        
+        .brand-text h4 { 
+            font-size: 16px; font-weight: 700; 
+            background: linear-gradient(135deg, #ffd700, #ff8c00); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+            animation: tracking-in-expand 1.2s cubic-bezier(0.215, 0.610, 0.355, 1.000) both;
+        }
+        @keyframes tracking-in-expand {
+            0% { letter-spacing: -0.5em; opacity: 0; }
+            40% { opacity: 0.6; }
+            100% { opacity: 1; letter-spacing: normal; }
+        }
+        .brand-text span { font-size: 12px; color: #8e8e9d; display: block; animation: fadeIn 2s ease; }
+        .glass-balance { background: linear-gradient(145deg, rgba(255,215,0,0.15), rgba(255,165,0,0.05)); backdrop-filter: blur(12px); padding: 8px 16px; border-radius: 40px; border: 1px solid rgba(255,215,0,0.4); display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; color: #ffd700; transition: transform 0.3s ease; }
+        .glass-balance:hover { transform: scale(1.05); }
+
+        .greeting-card {
+            background: linear-gradient(145deg, rgba(30,30,47,0.8), rgba(42,42,60,0.8)); 
+            backdrop-filter: blur(10px);
+            border-radius: 24px; padding: 18px 20px; margin-bottom: 20px;
+            border: 1px solid rgba(255,215,0,0.2); box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            display: flex; justify-content: space-between; align-items: center; cursor: pointer; 
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+        }
+        .greeting-card:active { transform: scale(0.96); }
+        .greeting-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(255,215,0,0.15); }
+        
+        .greeting-left { flex: 2; }
+        .greeting-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .wave-hand { font-size: 28px; animation: waveHand 2.5s infinite; transform-origin: 70% 70%; }
+        @keyframes waveHand { 0%, 60%, 100% { transform: rotate(0deg); } 10%, 30% { transform: rotate(14deg); } 20%, 40% { transform: rotate(-8deg); } 50% { transform: rotate(10deg); } }
+        
+        .greeting-text { font-size: 22px; font-weight: 700; background: linear-gradient(135deg, #fff, #ffd700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .username-badge { background: rgba(255,215,0,0.15); padding: 4px 12px; border-radius: 40px; font-size: 14px; font-weight: 500; color: #ffd700; display: inline-block; border: 1px solid rgba(255,215,0,0.3); margin-bottom: 6px; }
+
+        .animated-text-container { min-height: 22px; position: relative; overflow: hidden; margin-top: 4px; }
+        .animated-line { font-size: 13.5px; color: #b0b0c0; opacity: 0; animation: kineticReveal 9s infinite cubic-bezier(0.4, 0, 0.2, 1); position: absolute; width: 100%; font-weight: 500; }
+        .animated-line:nth-child(1) { animation-delay: 0s; }
+        .animated-line:nth-child(2) { animation-delay: 3s; }
+        .animated-line:nth-child(3) { animation-delay: 6s; }
+        @keyframes kineticReveal { 
+            0%, 100% { opacity: 0; transform: translateY(15px) skewY(5deg); } 
+            5%, 28% { opacity: 1; transform: translateY(0) skewY(0deg); } 
+            33% { opacity: 0; transform: translateY(-15px) skewY(-5deg); } 
+        }
+
+        .invite-box {
+            flex: 1; background: rgba(255,215,0,0.12); border-radius: 16px; padding: 12px 8px; text-align: center;
+            border: 1px solid rgba(255,215,0,0.4); animation: pulseBox 3s infinite alternate ease-in-out;
+            box-shadow: inset 0 0 10px rgba(255,215,0,0.1);
+        }
+        @keyframes pulseBox { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(255,215,0,0.2); } 100% { transform: scale(1.03); box-shadow: 0 0 20px rgba(255,215,0,0.5); } }
+        .invite-box .small-text { font-size: 11px; color: #ffd700; line-height: 1.2; font-weight: 600;}
+        .invite-box .big-number { font-size: 24px; font-weight: 800; color: #fff; text-shadow: 0 2px 10px rgba(255,215,0,0.5); }
+
+        .withdraw-home {
+            background: linear-gradient(135deg, #0ba360, #3cba92); border: none; padding: 16px; border-radius: 16px;
+            color: white; font-weight: 700; font-size: 16px; text-align: center; margin-bottom: 20px; cursor: pointer;
+            box-shadow: 0 8px 20px rgba(11, 163, 96, 0.3), inset 0 2px 5px rgba(255,255,255,0.3); width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: all 0.3s ease; position: relative; overflow: hidden;
+        }
+        .withdraw-home::after {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: rgba(255,255,255,0.1); transform: rotate(45deg); transition: 0.5s;
+        }
+        .withdraw-home:hover::after { left: 100%; }
+        .withdraw-home:active { transform: scale(0.97); box-shadow: 0 4px 10px rgba(11, 163, 96, 0.3); }
+
+        .task-card { 
+            background: rgba(25,27,35,0.6); backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; 
+            padding: 16px 18px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2); transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .task-card:hover { transform: translateX(5px); border-color: rgba(255,215,0,0.3); background: rgba(30,32,42,0.8); }
+        .task-icon { font-size: 32px; filter: drop-shadow(0 2px 5px rgba(255,215,0,0.3)); }
+        .task-info { flex: 1; margin-left: 16px; }
+        .task-info h4 { font-size: 15px; font-weight: 600; }
+        .task-info p { font-size: 12px; color: #8e8e9d; margin-top: 2px;}
+        .btn-modern { background: linear-gradient(135deg, #2b2b3b, #1e1e2a); border: 1px solid rgba(255,215,0,0.3); padding: 8px 16px; border-radius: 30px; color: #ffd700; font-weight: 600; font-size: 13px; cursor: pointer; min-width: 90px; text-align: center; transition: 0.3s; }
+        .btn-modern:hover { background: rgba(255,215,0,0.1); box-shadow: 0 0 10px rgba(255,215,0,0.2); }
+        .btn-modern:disabled { opacity: 0.5; color: #8e8e9d; border-color: transparent; box-shadow: none; transform: none; }
+
+        .profile-card { background: rgba(20,22,30,0.7); backdrop-filter: blur(10px); border-radius: 32px; padding: 24px; text-align: center; border: 1px solid rgba(255,215,0,0.15); margin-bottom: 20px; animation: fadeIn 0.5s ease; }
+        .avatar-large { width: 90px; height: 90px; background: linear-gradient(145deg, #ffd700, #ffa500); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 44px; margin: 0 auto 16px; box-shadow: 0 10px 25px rgba(255,215,0,0.4); overflow: hidden; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        .stat-item { background: rgba(255,255,255,0.03); padding: 14px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
+        .stat-item:hover { background: rgba(255,215,0,0.05); border-color: rgba(255,215,0,0.2); }
+        .stat-item span { font-size: 12px; color: #8e8e9d; display: block; margin-bottom: 4px;}
+        .stat-item b { font-size: 18px; color: #ffd700; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+        .modal.active { display: flex; animation: fadeInModal 0.3s ease; }
+        @keyframes fadeInModal { from { opacity: 0; backdrop-filter: blur(0px); } to { opacity: 1; backdrop-filter: blur(10px); } }
+        
+        .modal-content { background: linear-gradient(145deg, #1a1c24, #121318); border-radius: 28px; padding: 24px; width: 100%; max-width: 380px; border: 1px solid rgba(255,215,0,0.3); box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform: translateY(0); animation: slideUpModal 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes slideUpModal { from { transform: translateY(50px) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+        
+        .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; text-align: center; color: #ffd700; }
+        
+        .payment-methods { display: flex; gap: 8px; margin-bottom: 20px; }
+        .method-btn { flex: 1; background: rgba(255,255,255,0.03); border: 2px solid transparent; border-radius: 16px; padding: 12px 5px; text-align: center; cursor: pointer; transition: 0.3s; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .method-btn img { width: 40px; height: 40px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .method-btn span { font-size: 12px; color: #8e8e9d; font-weight: 500;}
+        .method-btn.selected { border-color: #ffd700; background: rgba(255,215,0,0.1); box-shadow: 0 8px 15px rgba(255,215,0,0.15); transform: translateY(-3px); }
+        .method-btn.selected span { color: #ffd700; font-weight: bold; }
+
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 13px; color: #a0a0b0; margin-bottom: 6px; margin-left: 10px; font-weight: 500;}
+        .input-field { width: 100%; padding: 14px 18px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; color: white; outline: none; transition: 0.3s; font-family: inherit; font-size: 14px;}
+        .input-field:focus { border-color: #ffd700; box-shadow: 0 0 10px rgba(255,215,0,0.2); background: rgba(0,0,0,0.6);}
+        .input-error { border-color: #ff4757 !important; animation: shake 0.4s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+        .submit-btn { background: linear-gradient(135deg, #ffd700, #ff8c00); border: none; padding: 16px; border-radius: 16px; color: #1a1a2e; font-weight: 800; font-size: 15px; width: 100%; cursor: pointer; transition: 0.3s; box-shadow: 0 8px 20px rgba(255,215,0,0.3); }
+        .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(255,215,0,0.4); }
+        .submit-btn:active { transform: scale(0.97); }
+        .close-btn { background: transparent; border: 1px solid rgba(255,255,255,0.15); padding: 14px; border-radius: 16px; color: #8e8e9d; width: 100%; cursor: pointer; margin-top: 10px; transition: 0.3s; font-weight: 600;}
+        .close-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
+
+        .floating-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 380px; background: rgba(15,17,22,0.85); backdrop-filter: blur(20px); display: flex; justify-content: space-around; padding: 10px; border-radius: 30px; border: 1px solid rgba(255,215,0,0.15); z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #5e5e71; font-size: 11px; cursor: pointer; padding: 8px 15px; border-radius: 20px; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); font-weight: 600;}
+        
+        .nav-item.active { 
+            color: #ffd700; 
+            background: #2a2718; 
+            transform: translateY(-4px); 
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2); 
+            border: 0.5px solid rgba(255, 215, 0, 0.3); 
+        }
+        
+        .nav-icon { font-size: 20px; margin-bottom: 4px; transition: 0.3s; }
+        .nav-item.active .nav-icon { transform: scale(1.1); }
+        
+        .section { display: none; animation: sectionFadeIn 0.5s cubic-bezier(0.165, 0.84, 0.44, 1); }
+        .section.active { display: block; }
+        @keyframes sectionFadeIn { from { opacity: 0; transform: translateY(15px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        .placeholder-box { text-align: center; padding: 40px 20px; background: rgba(255,255,255,0.02); border-radius: 24px; border: 1px dashed rgba(255,215,0,0.2); margin-top: 20px; backdrop-filter: blur(5px); }
+        .invite-btn-large { background: linear-gradient(135deg, #ffd700, #ffa500); border: none; padding: 16px; border-radius: 16px; color: #1a1a2e; font-weight: 700; font-size: 15px; width: 100%; cursor: pointer; margin-top: 20px; box-shadow: 0 8px 20px rgba(255,215,0,0.3); transition: 0.3s; }
+        .invite-btn-large:active { transform: scale(0.97); }
+
+        /* VIP Toggle Button */
+        .vip-toggle-row { display: flex; align-items: center; justify-content: space-between; background: rgba(25,27,35,0.8); border: 1px solid rgba(255,215,0,0.2); border-radius: 20px; padding: 14px 18px; margin-bottom: 14px; cursor: pointer; transition: all 0.3s; }
+        .vip-toggle-row:hover { border-color: rgba(255,215,0,0.5); background: rgba(30,32,42,0.9); }
+        .vip-toggle-left { display: flex; align-items: center; gap: 12px; }
+        .vip-toggle-left .icon { font-size: 26px; }
+        .vip-toggle-left .label { font-size: 15px; font-weight: 700; color: #ffd700; }
+        .vip-toggle-left .sublabel { font-size: 11px; color: #8e8e9d; margin-top: 2px; }
+        .vip-switch { position: relative; width: 52px; height: 28px; flex-shrink: 0; }
+        .vip-switch input { opacity: 0; width: 0; height: 0; }
+        .vip-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.1); border-radius: 28px; transition: 0.4s; border: 1px solid rgba(255,255,255,0.1); }
+        .vip-slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background: #8e8e9d; border-radius: 50%; transition: 0.4s; }
+        input:checked + .vip-slider { background: linear-gradient(135deg, #22c55e, #16a34a); border-color: rgba(34,197,94,0.5); }
+        input:checked + .vip-slider:before { transform: translateX(24px); background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .vip-status-text { font-size: 13px; font-weight: 700; }
+        .vip-status-text.on { color: #22c55e; }
+        .vip-status-text.off { color: #ff4757; }
+
+        /* VIP Purchase Modal */
+        .vip-modal-content { background: linear-gradient(145deg, #1a1c24, #121318); border-radius: 28px; padding: 24px; width: 100%; max-width: 380px; border: 1px solid rgba(255,215,0,0.4); box-shadow: 0 20px 50px rgba(0,0,0,0.7); animation: slideUpModal 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); max-height: 85vh; overflow-y: auto; }
+        .vip-benefits { background: rgba(255,215,0,0.05); border: 1px solid rgba(255,215,0,0.15); border-radius: 16px; padding: 16px; margin-bottom: 16px; max-height: 180px; overflow-y: auto; }
+        .vip-benefits h4 { color: #ffd700; font-size: 14px; margin-bottom: 10px; }
+        .vip-benefits ul { list-style: none; }
+        .vip-benefits ul li { font-size: 13px; color: #c0c0d0; padding: 4px 0; }
+        .vip-benefits ul li::before { content: '⭐ '; }
+        .vip-price-tag { background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,140,0,0.1)); border: 1px solid rgba(255,215,0,0.4); border-radius: 12px; padding: 10px 16px; text-align: center; margin-bottom: 16px; font-size: 18px; font-weight: 800; color: #ffd700; }
+        .payment-info-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; }
+        .payment-info-box .method-name { font-size: 13px; color: #ffd700; font-weight: 700; margin-bottom: 8px; }
+        .payment-info-box .info-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
+        .payment-info-box .info-label { font-size: 12px; color: #8e8e9d; }
+        .payment-info-box .info-value { font-size: 13px; color: #fff; font-weight: 600; }
+        .copy-hint { font-size: 11px; color: #3cba92; margin-top: 6px; text-align: center; }
+        .screenshot-upload-area { border: 2px dashed rgba(255,215,0,0.3); border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; margin-bottom: 14px; }
+        .screenshot-upload-area:hover { border-color: rgba(255,215,0,0.6); background: rgba(255,215,0,0.05); }
+        .screenshot-upload-area p { font-size: 13px; color: #8e8e9d; margin-top: 8px; }
+        .screenshot-preview { width: 100%; border-radius: 12px; margin-top: 10px; display: none; }
+        .vip-method-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+        .vip-method-tab { flex: 1; padding: 10px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.1); background: transparent; color: #8e8e9d; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-family: inherit; }
+        .vip-method-tab.active { border-color: #ffd700; background: rgba(255,215,0,0.1); color: #ffd700; }
+    </style>
+</head>
+<body>
+
+    <div class="parallax-bg">
+        <div class="glow-shape shape-1"></div>
+        <div class="glow-shape shape-2"></div>
+        <div class="glow-shape shape-3"></div>
+    </div>
+
+    <div class="container">
+        <div class="premium-header">
+            <div class="brand">
+                <div class="header-avatar" id="headerAvatar"></div>
+                <div class="brand-text">
+                    <h4>PayCoinAds</h4>
+                    <span>play & earn</span>
+                </div>
+            </div>
+            <div class="glass-balance">
+                <span>🪙</span>
+                <span id="totalCoins">0</span>
+            </div>
+        </div>
+
+        <div class="greeting-card" id="inviteBox">
+            <div class="greeting-left">
+                <div class="greeting-row">
+                    <span class="greeting-text">မင်္ဂလာပါ</span>
+                    <span class="wave-hand">🖐️</span>
+                </div>
+                <div class="username-badge" id="welcomeUsername">@username</div>
+                <div class="animated-text-container">
+                    <div class="animated-line">PayCoinAds မှ ကြိုဆိုပါတယ် ✨</div>
+                    <div class="animated-line">ငွေထုတ်ရန် ခလုတ်ကို နှိပ်ပါ 💳</div>
+                    <div class="animated-line">နေ့စဉ် Check-in လုပ်ပါ 🔥</div>
+                </div>
+            </div>
+            <div class="invite-box">
+                <div class="small-text">သူငယ်ချင်းများကို</div>
+                <div class="big-number">ဖိတ်<span>ပြီး</span></div>
+                <div class="small-text">50🪙 ရယူပါ</div>
+            </div>
+        </div>
+
+        <div id="homeSection" class="section active">
+            <!-- VIP Mode Toggle -->
+            <div class="vip-toggle-row" id="vipToggleRow" onclick="handleVipToggle()">
+                <div class="vip-toggle-left">
+                    <div class="icon">👑</div>
+                    <div>
+                        <div class="label">VIP Mode</div>
+                        <div class="sublabel" id="vipSubLabel">VIP မဝယ်ရသေးပါ</div>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span class="vip-status-text off" id="vipStatusText">OFF</span>
+                    <label class="vip-switch" onclick="event.stopPropagation();">
+                        <input type="checkbox" id="vipToggleCheck" onchange="handleVipToggle()">
+                        <span class="vip-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <button class="withdraw-home" id="homeWithdrawBtn">
+                💳 WITHDRAWAL MONEY (ပိုက်ဆံထုတ်ရန်)
+            </button>
+
+            <div class="task-card">
+                <div class="task-icon">🔥</div>
+                <div class="task-info"><h4>Daily Check-in</h4><p>+24 coins (Watch Ad)</p></div>
+                <button class="btn-modern" id="dailyBtn">Check-in</button>
+            </div>
+            <div class="task-card"><div class="task-icon">🪙</div><div class="task-info"><h4>Task 1</h4><p>+45 coins (Watch Ad)</p></div><button class="btn-modern task-btn" data-id="task1">Get +45</button></div>
+            <div class="task-card"><div class="task-icon">🪙</div><div class="task-info"><h4>Task 2</h4><p>+45 coins (Watch Ad)</p></div><button class="btn-modern task-btn" data-id="task2">Get +45</button></div>
+            <div class="task-card"><div class="task-icon">🪙</div><div class="task-info"><h4>Task 3</h4><p>+45 coins (Watch Ad)</p></div><button class="btn-modern task-btn" data-id="task3">Get +45</button></div>
+            <div class="task-card"><div class="task-icon">🪙</div><div class="task-info"><h4>Task 4</h4><p>+45 coins (Watch Ad)</p></div><button class="btn-modern task-btn" data-id="task4">Get +45</button></div>
+        </div>
+
+        <div id="earnSection" class="section">
+            <div class="placeholder-box" onclick="window.location.href='/earn.html'" style="cursor: pointer;">
+                <h2 style="color:#ffd700; margin-bottom:10px;">💰 Watch & Earn</h2>
+                <p style="color:#8e8e9d;">Click here to watch videos and earn coins</p>
+                <div style="margin-top: 20px;">
+                    <span class="badge" style="background: rgba(255,215,0,0.2); padding: 8px 16px; border-radius: 40px;">
+                        🎥 Watch Now
+                    </span>
+                </div>
+            </div>
+            <button class="invite-btn-large earn-invite">👥 သူငယ်ချင်းများကိုဖိတ်ပြီး 50🪙 ရယူလိုက်ပါ</button>
+        </div>
+
+        <!-- Games Section -->
+        <div id="gamesSection" class="section">
+            <div class="placeholder-box" onclick="window.location.href='/games.html'" style="cursor: pointer;">
+                <h2 style="color:#ffd700; margin-bottom:10px;">🎮 Play & Earn</h2>
+                <p style="color:#8e8e9d;">Click here to play games and earn coins</p>
+                <div style="margin-top: 20px;">
+                    <span class="badge" style="background: rgba(255,215,0,0.2); padding: 8px 16px; border-radius: 40px;">
+                        🎮 Play Now
+                    </span>
+                </div>
+            </div>
+            <button class="invite-btn-large games-invite">👥 သူငယ်ချင်းများကိုဖိတ်ပြီး 50🪙 ရယူလိုက်ပါ</button>
+        </div>
+
+        <div id="profileSection" class="section">
+            <div class="profile-card">
+                <div class="avatar-large" id="profileAvatar"></div>
+                <h2 id="profileUsername" style="font-weight: 700;">@username</h2>
+                <div class="stats-grid">
+                    <div class="stat-item"><span>လက်ကျန်ငွေ</span><b id="profileCoins">0</b> 🪙</div>
+                    <div class="stat-item"><span>ဖိတ်ခေါ်မှု</span><b id="referralCount">0</b></div>
+                </div>
+                <p style="margin-top: 15px; font-size: 12px; color: #5e5e71; font-weight: 500;">Joined: <span id="joinDate">-</span></p>
+            </div>
+            <button class="withdraw-home" id="profileWithdrawBtn">
+                💳 ပိုက်ဆံထုတ်ရန်
+            </button>
+        </div>
+
+        <nav class="floating-nav">
+            <div class="nav-item active" data-tab="home"><div class="nav-icon">🏠</div><span>Home</span></div>
+            <div class="nav-item" data-tab="earn"><div class="nav-icon">💰</div><span>Earn</span></div>
+            <div class="nav-item" data-tab="games"><div class="nav-icon">🎮</div><span>Games</span></div>
+            <div class="nav-item" data-tab="profile"><div class="nav-icon">👤</div><span>Profile</span></div>
+        </nav>
+    </div>
+
+    <!-- VIP Purchase Modal -->
+    <div class="modal" id="vipPurchaseModal">
+        <div class="vip-modal-content">
+            <div class="modal-title">👑 VIP Mode ဝယ်ယူပါ</div>
+
+            <div class="vip-benefits">
+                <h4>✨ VIP Mode ကောင်းကျိုးများ</h4>
+                <ul>
+                    <li>Task 1-4 ကြော်ငြာများကို Auto ကြည့်ပေးသည်</li>
+                    <li>Cooldown မရှိသောTask များကို တစ်ဆင့်ချင်း Auto ဖွင့်ကြည့်မည်</li>
+                    <li>User ဘက်မှ ဘာမှမလုပ်ဘဲ Coin များ အလိုအလျောက်ရမည်</li>
+                    <li>App ကိုဖွင့်ထားရုံဆိုရင် Auto Watch လုပ်ပေးမည်</li>
+                    <li>Cooldown ကုန်ရင် ထပ်မံ Auto ကြည့်မည်</li>
+                    <li>တစ်လ (30 ရက်) သက်တမ်းရှိသည်</li>
+                    <li>Admin Confirm ရရှိမှ Activate ဖြစ်မည်</li>
+                </ul>
+            </div>
+
+            <div class="vip-price-tag">💰 တစ်လ = 5,000 ကျပ်</div>
+
+            <div class="vip-method-tabs">
+                <button class="vip-method-tab active" id="kpayTab" onclick="selectVipMethod('kpay')">💙 KPay</button>
+                <button class="vip-method-tab" id="waveTab" onclick="selectVipMethod('wave')">🌊 Wave Pay</button>
+            </div>
+
+            <div id="kpayInfo" class="payment-info-box">
+                <div class="method-name">💙 KBZ Pay</div>
+                <div class="info-row">
+                    <span class="info-label">ဖုန်းနံပါတ်</span>
+                    <span class="info-value">09792310926</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">အမည်</span>
+                    <span class="info-value">Daw Mi Thaung</span>
+                </div>
+                <div class="copy-hint">📋 ဖုန်းနံပါတ်ကို ကူးပြီး ငွေလွဲပါ</div>
+            </div>
+
+            <div id="waveInfo" class="payment-info-box" style="display:none;">
+                <div class="method-name">🌊 Wave Money</div>
+                <div class="info-row">
+                    <span class="info-label">ဖုန်းနံပါတ်</span>
+                    <span class="info-value">09792310926</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">အမည်</span>
+                    <span class="info-value">Min Oak Soe</span>
+                </div>
+                <div class="copy-hint">📋 ဖုန်းနံပါတ်ကို ကူးပြီး ငွေလွဲပါ</div>
+            </div>
+
+            <div class="screenshot-upload-area" id="screenshotUploadArea" onclick="triggerScreenshotUpload()">
+                <div style="font-size:36px;">📸</div>
+                <p>ငွေလွဲ Screenshot တင်ရန် နှိပ်ပါ</p>
+                <img class="screenshot-preview" id="screenshotPreview" alt="screenshot">
+            </div>
+            <input type="file" id="screenshotFileInput" accept="image/*" style="display:none;" onchange="handleScreenshotFile(event)">
+
+            <button class="submit-btn" id="vipBuyBtn" onclick="submitVipPurchase()" style="margin-bottom:10px;">
+                ✅ ဝယ်မည် (ငွေလွဲပြီးပါပြီ)
+            </button>
+            <button class="close-btn" onclick="closeVipModal()">နောက်သို့</button>
+        </div>
+    </div>
+
+    <div class="modal" id="withdrawModal">
+        <div class="modal-content">
+            <div class="modal-title">ငွေထုတ်မည့်နည်းလမ်း ရွေးပါ</div>
+            
+            <div class="payment-methods">
+                <div class="method-btn selected" data-method="kpay">
+                    <img src="https://raw.githubusercontent.com/ggfjhdssd/paycoinads-telegram-app/main/public/images/images.jpeg" alt="KPay">
+                    <span>KBZ Pay</span>
+                </div>
+                <div class="method-btn" data-method="wavepay">
+                    <img src="https://raw.githubusercontent.com/ggfjhdssd/paycoinads-telegram-app/main/public/images/images%20(2).jpeg" alt="WavePay">
+                    <span>Wave Pay</span>
+                </div>
+                <div class="method-btn" data-method="binance">
+                    <img src="https://raw.githubusercontent.com/ggfjhdssd/paycoinads-telegram-app/main/public/images/images%20(3).jpeg" alt="Binance">
+                    <span>Binance</span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label id="labelId">KPay အကောင့်နံပါတ်</label>
+                <input type="text" class="input-field" id="inputId" placeholder="09xxxxxxxxx">
+            </div>
+
+            <div class="input-group" id="nameGroup">
+                <label>အကောင့်ပိုင်ရှင်အမည်</label>
+                <input type="text" class="input-field" id="inputName" placeholder="ဦး / ဒေါ် ...">
+            </div>
+
+            <div class="input-group">
+                <label>ထုတ်ယူမည့် ပမာဏ</label>
+                <input type="number" class="input-field" id="inputAmount" placeholder="အနည်းဆုံး 100000">
+            </div>
+
+            <button class="submit-btn" id="submitWithdraw">Withdraw (ထုတ်မည်)</button>
+            <button class="close-btn" id="closeModal">နောက်သို့</button>
+        </div>
+    </div>
+
+    <script>
+        
+        (async function() {
+            try {
+                const initData = window.Telegram?.WebApp?.initData || '';
+                const response = await fetch((window.__API_BASE__ || '') + '/api/check-vpn', {
+                    headers: { 'X-Telegram-Init-Data': initData }
+                });
+                const data = await response.json();
+                
+                if (!data.allowed) {
+                    window.location.href = '/vpn.html';
+                }
+            } catch (error) {
+                console.error('VPN check failed:', error);
+             
+            }
+        })();
+
+        const API_BASE = (window.__API_BASE__ || '') + '/api';
+        const tg = window.Telegram?.WebApp;
+        if (tg) { tg.expand(); tg.ready(); }
+        const initData = tg?.initData || '';
+        let currentUserId = null;
+        let userDataCache = null;
+        let vipScreenshotData = null;
+        let selectedVipMethod = 'kpay';
+
+        let AdController = null;
+        try {
+            if (window.Adsgram) {
+                AdController = window.Adsgram.init({ blockId: "23898" });
+                console.log('✅ Adsgram initialized with blockId 23898');
+            } else {
+                console.warn('Adsgram SDK not loaded');
+            }
+        } catch (e) {
+            console.error('Failed to initialize Adsgram:', e);
+        }
+
+        // ==================== Home VIP Auto-watch state ====================
+        let homeAutoWatching = false;
+        let homeAutoStopped = false;
+        const HOME_TASK_IDS = ['task1', 'task2', 'task3', 'task4'];
+        // Home tasks each use same blockId as earn page (task index 0-3)
+        const HOME_TASK_BLOCK_IDS = { task1:'23898', task2:'23919', task3:'24540', task4:'24541' };
+        const homeAdControllers = {};
+        function getHomeAdCtrl(blockId) {
+            if (homeAdControllers[blockId]) return homeAdControllers[blockId];
+            try { if (window.Adsgram) { homeAdControllers[blockId] = window.Adsgram.init({ blockId }); return homeAdControllers[blockId]; } } catch(e) {}
+            return null;
+        }
+
+        const modal = document.getElementById('withdrawModal');
+        const inputId = document.getElementById('inputId');
+        const inputName = document.getElementById('inputName');
+        const inputAmount = document.getElementById('inputAmount');
+        const labelId = document.getElementById('labelId');
+        const nameGroup = document.getElementById('nameGroup');
+        let selectedMethod = 'kpay';
+
+        const navItems = document.querySelectorAll('.nav-item');
+        const sections = document.querySelectorAll('.section');
+        
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                const tab = item.dataset.tab;
+                
+                if (tab === 'earn') {
+                    window.location.href = '/earn.html';
+                    return;
+                }
+                
+                if (tab === 'games') {
+                    window.location.href = '/games.html';
+                    return;
+                }
+                
+                navItems.forEach(i => i.classList.remove('active'));
+                sections.forEach(s => s.classList.remove('active'));
+                item.classList.add('active');
+                document.getElementById(tab + 'Section').classList.add('active');
+            });
+        });
+
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'COINS_UPDATED') {
+                console.log('Coins updated event received:', event.data.coins);
+                fetchUser();
+            }
+        });
+
+        const openModal = () => { modal.classList.add('active'); resetForm(); };
+        document.getElementById('homeWithdrawBtn').addEventListener('click', openModal);
+        document.getElementById('profileWithdrawBtn').addEventListener('click', openModal);
+        document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('active'));
+
+        const methodBtns = document.querySelectorAll('.method-btn');
+        methodBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                methodBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedMethod = btn.dataset.method;
+                
+                if (selectedMethod === 'binance') {
+                    labelId.innerText = 'Binance ID';
+                    inputId.placeholder = 'Enter Binance ID';
+                    nameGroup.style.display = 'none';
+                } else {
+                    labelId.innerText = selectedMethod === 'kpay' ? 'KPay အကောင့်နံပါတ်' : 'Wave Pay အကောင့်နံပါတ်';
+                    inputId.placeholder = '09xxxxxxxxx';
+                    nameGroup.style.display = 'block';
+                }
+            });
+        });
+
+        function resetForm() {
+            inputAmount.value = '';
+            inputId.value = '';
+            inputName.value = '';
+            inputAmount.classList.remove('input-error');
+        }
+
+        function formatTime(ms) {
+            if (ms <= 0) return '00:00:00';
+            const totalSec = Math.floor(ms / 1000);
+            const h = Math.floor(totalSec / 3600).toString().padStart(2, '0');
+            const m = Math.floor((totalSec % 3600) / 60).toString().padStart(2, '0');
+            const s = (totalSec % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        function updateAvatar(elementId, photoUrl) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            if (photoUrl && typeof photoUrl === 'string' && photoUrl.trim() !== '') {
+                element.innerHTML = `<img src="${photoUrl}" alt="avatar" onerror="this.onerror=null; this.parentNode.innerHTML='💰';" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 2px solid #ffd700; box-shadow: 0 0 15px rgba(255,215,0,0.2);">`;
+            } else {
+                element.innerHTML = '💰';
+            }
+        }
+
+        function updateUI(data) {
+            userDataCache = data;
+            currentUserId = data.userId;
+            const name = data.username ? '@' + data.username : 'User';
+            document.getElementById('welcomeUsername').innerText = name;
+            document.getElementById('profileUsername').innerText = name;
+            document.getElementById('totalCoins').innerText = data.coins.toLocaleString();
+            document.getElementById('profileCoins').innerText = data.coins.toLocaleString();
+            document.getElementById('referralCount').innerText = data.referralCount || 0;
+            if (data.createdAt) document.getElementById('joinDate').innerText = new Date(data.createdAt).toLocaleDateString();
+
+            updateAvatar('headerAvatar', data.photoUrl);
+            updateAvatar('profileAvatar', data.photoUrl);
+
+            // Update VIP toggle UI
+            updateVipUI(data);
+
+            // Auto-start home VIP watch if vipMode on
+            if (data.vipMode && data.vipExpiry && new Date(data.vipExpiry) > new Date()) {
+                if (!homeAutoWatching) startHomeAutoWatch();
+            }
+            
+            applyCooldowns(data);
+        }
+
+        function updateVipUI(data) {
+            const checkbox = document.getElementById('vipToggleCheck');
+            const statusText = document.getElementById('vipStatusText');
+            const subLabel = document.getElementById('vipSubLabel');
+
+            const now = new Date();
+            const vipActive = data.vipMode && data.vipExpiry && new Date(data.vipExpiry) > now;
+            const hasVip = data.vipExpiry && new Date(data.vipExpiry) > now;
+
+            checkbox.checked = vipActive;
+            
+            if (vipActive) {
+                statusText.textContent = 'ON';
+                statusText.className = 'vip-status-text on';
+                const expDate = new Date(data.vipExpiry).toLocaleDateString('my-MM');
+                subLabel.textContent = `✅ Active • ${expDate} ထိ`;
+            } else if (hasVip) {
+                statusText.textContent = 'OFF';
+                statusText.className = 'vip-status-text off';
+                const expDate = new Date(data.vipExpiry).toLocaleDateString('my-MM');
+                subLabel.textContent = `⏸ ပိတ်ထားသည် • ${expDate} ထိ`;
+            } else {
+                statusText.textContent = 'OFF';
+                statusText.className = 'vip-status-text off';
+                subLabel.textContent = 'VIP မဝယ်ရသေးပါ • ဝယ်ရန် နှိပ်ပါ';
+            }
+        }
+
+        async function handleVipToggle() {
+            if (!userDataCache) return;
+            const now = new Date();
+            const hasVip = userDataCache.vipExpiry && new Date(userDataCache.vipExpiry) > now;
+
+            if (!hasVip) {
+                // Open VIP purchase modal
+                document.getElementById('vipPurchaseModal').classList.add('active');
+                return;
+            }
+
+            // Toggle VIP mode on/off
+            try {
+                const res = await fetch(`${API_BASE}/vip/toggle`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData }
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    userDataCache.vipMode = data.vipMode;
+                    updateVipUI(userDataCache);
+                    const msg = data.vipMode ? '✅ VIP Mode ဖွင့်လိုက်ပါပြီ' : '⏸ VIP Mode ပိတ်လိုက်ပါပြီ';
+                    showMsg(msg);
+                } else {
+                    showMsg(data.error || 'Error', true);
+                    // Revert checkbox
+                    document.getElementById('vipToggleCheck').checked = userDataCache.vipMode;
+                }
+            } catch(e) {
+                showMsg('Network error', true);
+            }
+        }
+
+        function selectVipMethod(method) {
+            selectedVipMethod = method;
+            document.getElementById('kpayTab').classList.toggle('active', method === 'kpay');
+            document.getElementById('waveTab').classList.toggle('active', method === 'wave');
+            document.getElementById('kpayInfo').style.display = method === 'kpay' ? 'block' : 'none';
+            document.getElementById('waveInfo').style.display = method === 'wave' ? 'block' : 'none';
+        }
+
+        function triggerScreenshotUpload() {
+            document.getElementById('screenshotFileInput').click();
+        }
+
+        function handleScreenshotFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                // Compress image before storing
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_SIZE = 800;
+                    let w = img.width, h = img.height;
+                    if (w > MAX_SIZE || h > MAX_SIZE) {
+                        if (w > h) { h = Math.round(h * MAX_SIZE / w); w = MAX_SIZE; }
+                        else { w = Math.round(w * MAX_SIZE / h); h = MAX_SIZE; }
+                    }
+                    canvas.width = w;
+                    canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    vipScreenshotData = canvas.toDataURL('image/jpeg', 0.7);
+                    const preview = document.getElementById('screenshotPreview');
+                    preview.src = vipScreenshotData;
+                    preview.style.display = 'block';
+                    document.querySelector('#screenshotUploadArea p').textContent = '✅ Screenshot တင်ပြီးပါပြီ';
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function submitVipPurchase() {
+            if (!vipScreenshotData) {
+                alert('ကျေးဇူးပြု၍ ငွေလွဲ Screenshot တင်ပါ');
+                return;
+            }
+            const btn = document.getElementById('vipBuyBtn');
+            btn.disabled = true;
+            btn.textContent = 'ပို့နေသည်...';
+            try {
+                const res = await fetch(`${API_BASE}/vip/purchase`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData },
+                    body: JSON.stringify({ screenshotData: vipScreenshotData, paymentMethod: selectedVipMethod })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    alert('✅ တောင်းဆိုမှုပေးပို့ပြီးပါပြီ!\nAdmin Confirm ရရှိမှ VIP Mode ဖွင့်သွားမည်ဖြစ်သည်။');
+                    closeVipModal();
+                } else {
+                    alert(data.error || 'Error occurred');
+                }
+            } catch(e) {
+                alert('Network error. Please try again.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✅ ဝယ်မည် (ငွေလွဲပြီးပါပြီ)';
+            }
+        }
+
+        function closeVipModal() {
+            document.getElementById('vipPurchaseModal').classList.remove('active');
+            vipScreenshotData = null;
+            document.getElementById('screenshotPreview').style.display = 'none';
+            document.getElementById('screenshotPreview').src = '';
+            document.querySelector('#screenshotUploadArea p').textContent = 'ငွေလွဲ Screenshot တင်ရန် နှိပ်ပါ';
+            document.getElementById('screenshotFileInput').value = '';
+        }
+
+        function showMsg(msg, isError = false) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:${isError ? '#ff4757' : '#22c55e'};color:white;padding:12px 24px;border-radius:40px;font-weight:600;font-size:14px;z-index:9999;white-space:nowrap;`;
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => document.body.removeChild(toast), 3000);
+        }
+
+        function applyCooldowns(data) {
+            const now = Date.now();
+            
+            // Daily check-in cooldown (24 hours)
+            const dailyCooldown = 24 * 60 * 60 * 1000;
+            const dailyLastClaim = data.dailyLastClaim || 0;
+            const dailyRemaining = dailyCooldown - (now - dailyLastClaim);
+            
+            const dailyBtn = document.getElementById('dailyBtn');
+            if (dailyRemaining > 0) {
+                dailyBtn.disabled = true;
+                
+            } else {
+                dailyBtn.disabled = false;
+                dailyBtn.innerText = 'Check-in';
+            }
+            
+            
+            const taskCooldown = 15 * 60 * 1000; // 15 minutes
+            document.querySelectorAll('.task-btn').forEach(btn => {
+                const taskId = btn.dataset.id;
+                const taskLastClaim = data.tasks?.[taskId] || 0;
+                const taskRemaining = taskCooldown - (now - taskLastClaim);
+                
+                if (taskRemaining > 0) {
+                    btn.disabled = true;
+                    
+                } else {
+                    btn.disabled = false;
+                    btn.innerText = 'Get +45';
+                }
+            });
+        }
+
+        
+        function startLiveCountdown() {
+            setInterval(() => {
+                if (userDataCache) {
+                    const now = Date.now();
+                    
+                    // Daily check-in
+                    const dailyCooldown = 24 * 60 * 60 * 1000;
+                    const dailyLastClaim = userDataCache.dailyLastClaim || 0;
+                    const dailyRemaining = dailyCooldown - (now - dailyLastClaim);
+                    const dailyBtn = document.getElementById('dailyBtn');
+                    
+                    if (dailyRemaining > 0) {
+                        dailyBtn.disabled = true;
+                        dailyBtn.innerText = formatTime(dailyRemaining);
+                    } else {
+                        dailyBtn.disabled = false;
+                        dailyBtn.innerText = 'Check-in';
+                    }
+                    
+                    // Tasks
+                    const taskCooldown = 15 * 60 * 1000; // 15 minutes
+                    document.querySelectorAll('.task-btn').forEach(btn => {
+                        const taskId = btn.dataset.id;
+                        const taskLastClaim = userDataCache.tasks?.[taskId] || 0;
+                        const taskRemaining = taskCooldown - (now - taskLastClaim);
+                        
+                        if (taskRemaining > 0) {
+                            btn.disabled = true;
+                            btn.innerText = formatTime(taskRemaining);
+                        } else {
+                            btn.disabled = false;
+                            btn.innerText = 'Get +45';
+                        }
+                    });
+                }
+            }, 1000);
+        }
+
+        async function fetchUser() {
+            try {
+                const res = await fetch(`${API_BASE}/user`, {
+                    headers: { 'X-Telegram-Init-Data': initData }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    updateUI(data);
+                } else {
+                    console.error('API error:', data.error);
+                }
+            } catch (err) { 
+                console.error('Network error:', err);
+            }
+        }
+
+        // ==================== Toast for home page ====================
+        function showHomeToast(msg, type='info', dur=3000) {
+            let el = document.getElementById('homeToast');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'homeToast';
+                el.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(80px);padding:11px 22px;border-radius:40px;font-weight:600;font-size:14px;z-index:9999;transition:transform 0.3s;white-space:nowrap;max-width:90%;text-align:center;font-family:inherit;';
+                document.body.appendChild(el);
+            }
+            el.textContent = msg;
+            el.style.background = type==='success' ? 'linear-gradient(135deg,#0ba360,#3cba92)' : type==='error' ? 'linear-gradient(135deg,#ff4757,#ff6b81)' : 'linear-gradient(135deg,#1a1c24,#121318)';
+            el.style.color = 'white';
+            el.style.boxShadow = '0 8px 25px rgba(0,0,0,0.5)';
+            el.style.transform = 'translateX(-50%) translateY(0)';
+            setTimeout(() => { el.style.transform = 'translateX(-50%) translateY(80px)'; }, dur);
+        }
+
+        async function showAdAndReward(taskType, taskId = null) {
+            if (!currentUserId) { showHomeToast('User data ရယူနေဆဲ...', 'error'); return; }
+            if (!AdController) { showHomeToast('Adsgram ချိတ်ဆက်မရပါ', 'error'); return; }
+            try {
+                const result = await AdController.show();
+                console.log('Ad finished:', result);
+                let url = `${API_BASE}/adsgram-reward?userId=${currentUserId}&type=${taskType}`;
+                if (taskId) url += `&taskId=${taskId}&source=home`;
+                const rewardRes = await fetch(url);
+                if (rewardRes.ok) {
+                    const rewardText = await rewardRes.text();
+                    if (rewardText === 'OK') {
+                        const reward = taskType === 'daily' ? 24 : 50;
+                        showHomeToast(`✅ +${reward} Coins ရရှိပြီး!`, 'success', 3000);
+                        fetchUser();
+                    } else {
+                        showHomeToast('Coins ထည့်ရာတွင် ပြဿနာရှိသည်', 'error');
+                    }
+                } else {
+                    const errTxt = await rewardRes.text();
+                    if (rewardRes.status === 400 && errTxt.includes('cooldown')) {
+                        showHomeToast('Cooldown မကုန်သေးပါ', 'error');
+                    } else {
+                        showHomeToast('Coins ထည့်ရာတွင် ပြဿနာရှိသည်', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Ad error:', error);
+                showHomeToast('ကြော်ငြာကို အပြည့်ကြည့်ရမည်', 'error');
+            }
+        }
+
+        // ==================== VIP Auto-watch for Home tasks ====================
+        async function startHomeAutoWatch() {
+            if (homeAutoWatching) return;
+            homeAutoWatching = true;
+            homeAutoStopped = false;
+            await runHomeAutoLoop();
+        }
+
+        function sleep2(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        async function runHomeAutoLoop() {
+            if (homeAutoStopped) { homeAutoWatching = false; return; }
+            // Get available tasks from cooldown data
+            if (!userDataCache) { homeAutoWatching = false; return; }
+            const now = Date.now();
+            const taskCooldown = 15 * 60 * 1000;
+            const available = HOME_TASK_IDS.filter(tid => {
+                const lastClaim = userDataCache.tasks?.[tid] || 0;
+                return (now - lastClaim) >= taskCooldown;
+            });
+            if (available.length === 0) {
+                homeAutoWatching = false;
+                return;
+            }
+            const taskId = available[0];
+            const blockId = HOME_TASK_BLOCK_IDS[taskId];
+            const ctrl = getHomeAdCtrl(blockId);
+            if (!ctrl) { homeAutoWatching = false; return; }
+
+            try {
+                const result = await ctrl.show();
+                if (result && result.done) {
+                    // Wait 2 seconds, then claim
+                    await sleep2(2000);
+                    const url = `${API_BASE}/adsgram-reward?userId=${currentUserId}&type=task&taskId=${taskId}&source=home`;
+                    const res = await fetch(url);
+                    if (res.ok) {
+                        const txt = await res.text();
+                        if (txt === 'OK') {
+                            showHomeToast(`✅ ${taskId} +45 Coins ရရှိပြီ!`, 'success', 3000);
+                            await fetchUser();
+                        }
+                    }
+                }
+            } catch(e) {
+                console.error('Home auto ad error:', e);
+            }
+            // 2 second gap before next task
+            await sleep2(2000);
+            if (!homeAutoStopped) await runHomeAutoLoop();
+        }
+
+        document.getElementById('dailyBtn').addEventListener('click', () => {
+            showAdAndReward('daily');
+        });
+        
+        document.querySelectorAll('.task-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const taskId = e.currentTarget.dataset.id;
+                showAdAndReward('task', taskId);
+            });
+        });
+
+        
+        document.getElementById('submitWithdraw').addEventListener('click', async () => {
+            const amount = parseInt(inputAmount.value);
+            if (!inputId.value) return alert('အကောင့်ထည့်ပါ');
+            if (isNaN(amount) || amount < 100000) {
+                inputAmount.classList.add('input-error');
+                return alert('အနည်းဆုံး 100000 🪙 ထုတ်ရပါမည်');
+            }
+
+            const res = await fetch(`${API_BASE}/withdraw`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData },
+                body: JSON.stringify({ method: selectedMethod, accountDetails: inputId.value, accountName: inputName.value, amount })
+            });
+            if (res.ok) {
+                alert('တောင်းဆိုမှုအောင်မြင်ပါသည်။');
+                modal.classList.remove('active');
+                fetchUser();
+            } else {
+                alert((await res.json()).error);
+            }
+        });
+
+    
+        const shareInvite = () => {
+            if (!currentUserId) {
+                alert('ကျေးဇူးပြု၍ ခဏစောင့်ပါ... User data ရယူနေဆဲဖြစ်သည်။');
+                return;
+            }
+            
+            const shareText = 'ဖုန်းလေးပွတ်ရင်း အပိုဝင်ငွေ ရှာချင်သူများအတွက် PayCoinAds 🐻 ကျွန်တော့်ရဲ့ Link ကနေ ဝင်ဆော့ရုံနဲ့ သင် 50🪙 ချက်ခြင်းရပြီး Coins တွေ စုပြီး ငွေထုတ်လို့ရပြီနော်! အခုပဲ စမ်းကြည့်လိုက်ပါ။ 👇';
+            const shareUrl = `https://t.me/paycoinmm_bot?start=${currentUserId}`;
+            const shareLink = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+            
+            if (tg && tg.openTelegramLink) {
+                tg.openTelegramLink(shareLink);
+            } else {
+                window.open(shareLink, '_blank');
+            }
+        };
+
+        document.getElementById('inviteBox').addEventListener('click', shareInvite);
+        document.querySelector('.earn-invite').addEventListener('click', shareInvite);
+        document.querySelector('.games-invite').addEventListener('click', shareInvite);
+
+        fetchUser();
+        setInterval(fetchUser, 60000); // Refresh every minute
+        startLiveCountdown(); // Start live countdown timer
+    </script>
+</body>
+</html>

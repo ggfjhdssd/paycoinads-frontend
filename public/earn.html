@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    // ═══════════════════════════════════════
+    // API Base URL — set by Vercel env var
+    // VERCEL env: VITE_API_URL = https://your-backend.onrender.com
+    // ═══════════════════════════════════════
+    window.__API_BASE__ = "%%VITE_API_URL%%";
+  </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayCoinAds • Watch & Earn</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Pyidaungsu&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+        body{font-family:'Inter','Pyidaungsu',sans-serif;background:#0a0b0e;color:#fff;display:flex;justify-content:center;min-height:100vh;overflow-x:hidden;}
+        .parallax-bg{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:-1;overflow:hidden;pointer-events:none;}
+        .glow-shape{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.6;animation:floatShape 20s infinite alternate ease-in-out;}
+        .shape-1{width:300px;height:300px;background:rgba(255,215,0,0.15);top:-100px;left:-100px;}
+        .shape-2{width:400px;height:400px;background:rgba(60,186,146,0.1);bottom:-150px;right:-100px;animation-delay:-5s;}
+        .shape-3{width:250px;height:250px;background:rgba(255,165,0,0.12);top:40%;left:50%;animation-delay:-10s;}
+        @keyframes floatShape{0%{transform:translate(0,0) scale(1);}50%{transform:translate(30px,-50px) scale(1.1);}100%{transform:translate(-40px,40px) scale(0.9);}}
+        .container{width:100%;max-width:420px;padding:16px 12px 120px;position:relative;z-index:1;}
+
+        /* Header */
+        .premium-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;background:rgba(20,22,27,0.6);backdrop-filter:blur(16px);padding:10px 16px;border-radius:30px;border:1px solid rgba(255,215,0,0.15);box-shadow:0 8px 32px rgba(0,0,0,0.4);}
+        .brand{display:flex;align-items:center;gap:10px;}
+        .header-avatar{width:38px;height:38px;background:linear-gradient(145deg,#2a2a3c,#1a1a28);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid rgba(255,215,0,0.3);overflow:hidden;}
+        .header-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+        .brand-text h4{font-size:15px;font-weight:700;background:linear-gradient(135deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+        .brand-text span{font-size:11px;color:#8e8e9d;display:block;}
+        .glass-balance{background:linear-gradient(145deg,rgba(255,215,0,0.15),rgba(255,165,0,0.05));backdrop-filter:blur(12px);padding:7px 14px;border-radius:40px;border:1px solid rgba(255,215,0,0.4);display:flex;align-items:center;gap:6px;font-weight:700;font-size:17px;color:#ffd700;}
+        .back-button{background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);color:#ffd700;padding:8px 16px;border-radius:30px;font-size:13px;cursor:pointer;margin-bottom:14px;display:inline-flex;align-items:center;gap:6px;transition:all 0.3s;font-family:inherit;}
+        .back-button:hover{background:rgba(255,215,0,0.2);transform:translateX(-3px);}
+
+        /* VIP banner */
+        .vip-auto-banner{background:linear-gradient(135deg,rgba(255,215,0,0.12),rgba(255,140,0,0.08));border:1px solid rgba(255,215,0,0.35);border-radius:14px;padding:10px 14px;margin-bottom:12px;display:none;align-items:center;gap:10px;animation:pulseGlow 2s infinite;}
+        @keyframes pulseGlow{0%,100%{box-shadow:0 0 8px rgba(255,215,0,0.15);}50%{box-shadow:0 0 20px rgba(255,215,0,0.4);}}
+        .vip-auto-banner .vab-icon{font-size:24px;}
+        .vip-auto-banner .vab-text{flex:1;}
+        .vip-auto-banner .vab-text h4{font-size:13px;font-weight:700;color:#ffd700;}
+        .vip-auto-banner .vab-text p{font-size:11px;color:#aaa;margin-top:1px;}
+        .vip-stop-btn{background:rgba(255,70,70,0.18);border:1px solid rgba(255,70,70,0.4);color:#ff6b6b;padding:5px 11px;border-radius:20px;font-size:12px;cursor:pointer;white-space:nowrap;font-family:inherit;}
+
+        /* Auto steps */
+        .auto-progress{background:rgba(20,22,27,0.8);border:1px solid rgba(255,215,0,0.15);border-radius:14px;padding:12px 14px;margin-bottom:12px;display:none;}
+        .auto-progress.show{display:block;}
+        .auto-progress h4{font-size:12px;color:#ffd700;margin-bottom:8px;}
+        .auto-step{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;color:#8e8e9d;}
+        .auto-step .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.1);flex-shrink:0;}
+        .auto-step.active .dot{background:#ffd700;animation:blink 0.8s infinite;}
+        .auto-step.done .dot{background:#3cba92;}
+        .auto-step.done{color:#3cba92;}
+        .auto-step.active{color:#ffd700;}
+        @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+
+        /* 20s post-ad overlay */
+        .ad-wait-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:3000;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+        .ad-wait-overlay.show{display:flex;}
+        .ad-wait-circle{width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,140,0,0.1));border:3px solid rgba(255,215,0,0.5);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+        .ad-wait-circle .countdown{font-size:28px;font-weight:800;color:#ffd700;}
+        .ad-wait-circle .sec{font-size:11px;color:#aaa;}
+        .ad-wait-title{font-size:16px;font-weight:700;color:#ffd700;}
+        .ad-wait-sub{font-size:13px;color:#8e8e9d;}
+        .ad-wait-coin{font-size:20px;font-weight:800;color:#3cba92;display:none;}
+        .ad-wait-coin.show{display:block;animation:popIn 0.4s ease;}
+        @keyframes popIn{from{transform:scale(0.5);opacity:0;}to{transform:scale(1);opacity:1;}}
+
+        /* Tasks grid */
+        .tasks-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+        .task-card{background:rgba(25,27,35,0.65);backdrop-filter:blur(12px);border:1px solid rgba(255,215,0,0.1);border-radius:20px;padding:16px 10px;display:flex;flex-direction:column;align-items:center;text-align:center;transition:all 0.3s ease;position:relative;overflow:hidden;}
+        .task-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#ffd700,#ff8c00);opacity:0;transition:opacity 0.3s;}
+        .task-card:hover{transform:translateY(-4px);border-color:rgba(255,215,0,0.35);box-shadow:0 8px 20px rgba(255,215,0,0.12);}
+        .task-card:hover::before{opacity:1;}
+        .task-card.vip-active{border-color:rgba(255,215,0,0.5);box-shadow:0 0 18px rgba(255,215,0,0.18);}
+        .task-icon{font-size:28px;margin-bottom:8px;filter:drop-shadow(0 2px 4px rgba(255,215,0,0.3));}
+        .task-reward{font-size:16px;font-weight:700;color:#ffd700;margin-bottom:4px;}
+        .task-counter{font-size:13px;font-weight:700;margin-bottom:4px;}
+        .task-counter.full{color:#ff4757;}
+        .task-counter.partial{color:#ffd700;}
+        .task-counter.empty{color:#8e8e9d;}
+        .task-status{font-size:11px;color:#8e8e9d;margin-bottom:10px;min-height:16px;}
+        .progress-bar{width:100%;height:4px;background:rgba(255,215,0,0.1);border-radius:2px;margin-bottom:10px;overflow:hidden;}
+        .progress-fill{height:100%;background:linear-gradient(90deg,#ffd700,#ff8c00);border-radius:2px;transition:width 0.4s ease;}
+        .task-btn{width:100%;background:linear-gradient(135deg,#2b2b3b,#1e1e2a);border:1px solid rgba(255,215,0,0.3);padding:10px;border-radius:40px;color:#ffd700;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.3s;font-family:inherit;}
+        .task-btn:hover:not(:disabled){background:rgba(255,215,0,0.14);box-shadow:0 0 12px rgba(255,215,0,0.18);}
+        .task-btn:disabled{opacity:0.5;cursor:not-allowed;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08);color:#8e8e9d;}
+        .task-btn.watching{background:rgba(255,215,0,0.14);color:#ffd700;}
+        .task-btn.auto-mode{background:linear-gradient(135deg,rgba(255,215,0,0.18),rgba(255,140,0,0.08));border-color:rgba(255,215,0,0.45);animation:autoPulse 1.5s infinite;}
+        @keyframes autoPulse{0%,100%{opacity:1;}50%{opacity:0.65;}}
+
+        /* All done */
+        .all-done-box{text-align:center;padding:24px 16px;background:rgba(60,186,146,0.08);border:1px solid rgba(60,186,146,0.25);border-radius:18px;margin-bottom:14px;display:none;}
+        .all-done-box.show{display:block;}
+        .all-done-box h3{color:#3cba92;font-size:16px;margin-bottom:6px;}
+        .all-done-box p{color:#8e8e9d;font-size:12px;}
+
+        /* Toast */
+        .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(100px);background:linear-gradient(135deg,#1a1c24,#121318);border:1px solid rgba(255,215,0,0.3);border-radius:40px;padding:10px 22px;color:#ffd700;font-weight:600;font-size:13px;box-shadow:0 8px 25px rgba(0,0,0,0.5);z-index:2000;transition:transform 0.3s ease;white-space:nowrap;max-width:90%;}
+        .toast.show{transform:translateX(-50%) translateY(0);}
+        .toast.success{background:linear-gradient(135deg,#0ba360,#3cba92);color:white;border-color:rgba(255,255,255,0.2);}
+        .toast.error{background:linear-gradient(135deg,#ff4757,#ff6b81);color:white;border-color:rgba(255,255,255,0.2);}
+        .footer{margin-top:24px;text-align:center;color:#5e5e71;font-size:11px;}
+    </style>
+</head>
+<body>
+<div class="parallax-bg">
+    <div class="glow-shape shape-1"></div>
+    <div class="glow-shape shape-2"></div>
+    <div class="glow-shape shape-3"></div>
+</div>
+
+<!-- 20 second post-ad wait overlay -->
+<div class="ad-wait-overlay" id="adWaitOverlay">
+    <div class="ad-wait-circle">
+        <div class="countdown" id="waitCountdown">20</div>
+        <div class="sec">secs</div>
+    </div>
+    <div class="ad-wait-title">ကြော်ငြာ ကြည့်ပြီးပါပြီ 🎉</div>
+    <div class="ad-wait-sub" id="waitSubText">Coin ရရှိနေသည်...</div>
+    <div class="ad-wait-coin" id="waitCoinText">+40 🪙</div>
+</div>
+
+<div class="container">
+    <div class="premium-header">
+        <div class="brand">
+            <div class="header-avatar" id="headerAvatar">💰</div>
+            <div class="brand-text">
+                <h4>Watch & Earn</h4>
+                <span>videos</span>
+            </div>
+        </div>
+        <div class="glass-balance">
+            <span>🪙</span>
+            <span id="totalCoins">0</span>
+        </div>
+    </div>
+
+    <button class="back-button" onclick="goBack()">← Back to Home</button>
+
+    <!-- VIP auto running banner -->
+    <div class="vip-auto-banner" id="vipAutoBanner">
+        <div class="vab-icon">🤖</div>
+        <div class="vab-text">
+            <h4>VIP Auto-Watch လုပ်နေသည်</h4>
+            <p id="autoStatusText">Task များကို ကြည့်နေသည်...</p>
+        </div>
+        <button class="vip-stop-btn" onclick="stopAutoWatch()">Stop</button>
+    </div>
+
+    <!-- Auto progress -->
+    <div class="auto-progress" id="autoProgress">
+        <h4>🔄 Auto Progress</h4>
+        <div id="autoSteps"></div>
+    </div>
+
+    <!-- All done box -->
+    <div class="all-done-box" id="allDoneBox">
+        <h3>✅ အားလုံးပြီးပါပြီ!</h3>
+        <p>Cooldown မရှိသောTask အားလုံး ပြီးပါပြီ<br>2 နာရီနောက် 0/4 ပြန်စမည်</p>
+    </div>
+
+    <div class="tasks-grid" id="tasksGrid"></div>
+    <div class="footer">Task တစ်ခုကို 4 ကြိုင်ကြည့်ရသည် • ကြည့်ပြီး 1 မိနစ်ကြာ ဆက်ကြည့်ရသည် • 4/4 ဖြစ်ရင် 2 နာရီနောက် ပြန်စသည်</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_BASE = (window.__API_BASE__ || '') + '/api';
+const tg = window.Telegram?.WebApp;
+if (tg) { tg.expand(); tg.ready(); }
+const initData = tg?.initData || '';
+
+let currentUser = null;
+let activeTaskId = null;
+let taskStatus = {};
+let isAutoWatching = false;
+let autoWatchStopped = false;
+
+// ==================== Task configs (blockId per task) ====================
+const TASK_CONFIGS = [
+    { id: 'task1', label: 'Task 1', icon: '🎬', blockId: '23898' },
+    { id: 'task2', label: 'Task 2', icon: '📺', blockId: '23919' },
+    { id: 'task3', label: 'Task 3', icon: '🎥', blockId: '24540' },
+    { id: 'task4', label: 'Task 4', icon: '📽️', blockId: '24541' },
+    { id: 'task5', label: 'Task 5', icon: '🍿', blockId: '24542' },
+    { id: 'task6', label: 'Task 6', icon: '🎞️', blockId: '24543' },
+    { id: 'task7', label: 'Task 7', icon: '▶️',  blockId: '24544' }
+];
+
+// blockId별 AdController cache
+const adControllers = {};
+function getAdController(blockId) {
+    if (adControllers[blockId]) return adControllers[blockId];
+    try {
+        if (window.Adsgram) {
+            adControllers[blockId] = window.Adsgram.init({ blockId });
+            return adControllers[blockId];
+        }
+    } catch(e) { console.error('Adsgram init error blockId', blockId, e); }
+    return null;
+}
+// Pre-init all controllers
+window.addEventListener('load', () => {
+    TASK_CONFIGS.forEach(t => getAdController(t.blockId));
+});
+
+// ==================== Toast ====================
+function showToast(msg, type='info', dur=3000) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `toast ${type} show`;
+    setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ==================== Avatar ====================
+function updateAvatar(photoUrl) {
+    const el = document.getElementById('headerAvatar');
+    if (!el) return;
+    el.innerHTML = photoUrl
+        ? `<img src="${photoUrl}" alt="av" onerror="this.onerror=null;this.parentNode.innerHTML='💰';" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+        : '💰';
+}
+
+// ==================== 20-second overlay with auto-dismiss ====================
+function showAdWaitOverlay(reward, onDone) {
+    const overlay = document.getElementById('adWaitOverlay');
+    const countdownEl = document.getElementById('waitCountdown');
+    const subText = document.getElementById('waitSubText');
+    const coinText = document.getElementById('waitCoinText');
+
+    overlay.classList.add('show');
+    countdownEl.textContent = '20';
+    subText.textContent = 'Coin ရရှိနေသည်...';
+    coinText.classList.remove('show');
+
+    let secs = 20;
+    const timer = setInterval(() => {
+        secs--;
+        countdownEl.textContent = secs;
+        if (secs <= 0) {
+            clearInterval(timer);
+            countdownEl.textContent = '✓';
+            subText.textContent = 'Coin ရရှိပြီးပါပြီ!';
+            coinText.textContent = `+${reward} 🪙`;
+            coinText.classList.add('show');
+            // auto close after 1.5s
+            setTimeout(() => {
+                overlay.classList.remove('show');
+                if (onDone) onDone();
+            }, 1500);
+        }
+    }, 1000);
+}
+
+// ==================== Render ====================
+function fmtTime(ms) {
+    if (ms <= 0) return '';
+    const m = Math.floor(ms / 60000);
+    const s = Math.ceil((ms % 60000) / 1000);
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+}
+
+function renderTasks() {
+    const now = Date.now();
+    let html = '';
+    TASK_CONFIGS.forEach(task => {
+        const s = taskStatus[task.id] || { currentCount: 0, maxCount: 4, reward: 40, watchCooldownRemaining: 0, dailyResetIn: 0 };
+        const pct = (s.currentCount / s.maxCount) * 100;
+        const full = s.currentCount >= s.maxCount;
+        const onCooldown = s.watchCooldownRemaining > 0;
+        const isActive = activeTaskId === task.id;
+        const disabled = full || onCooldown || !!activeTaskId;
+
+        let counterClass = full ? 'full' : (s.currentCount > 0 ? 'partial' : 'empty');
+        let statusTxt = '';
+        if (full && s.dailyResetIn > 0) statusTxt = `⏰ ${fmtTime(s.dailyResetIn)} နောက် reset`;
+        else if (full) statusTxt = '✅ ပြီးပါပြီ';
+        else if (onCooldown) statusTxt = `⏳ ${fmtTime(s.watchCooldownRemaining)} ကြာဆက်ကြည့်`;
+        else statusTxt = 'ကြည့်ရန် အသင့်';
+
+        let btnTxt = 'Watch';
+        let btnClass = '';
+        if (isActive && isAutoWatching) { btnTxt = '🤖 Auto...'; btnClass = 'auto-mode'; }
+        else if (isActive) { btnTxt = 'Watching...'; btnClass = 'watching'; }
+        else if (full) btnTxt = '✅ Done';
+        else if (onCooldown) btnTxt = `⏳ ${fmtTime(s.watchCooldownRemaining)}`;
+
+        html += `
+        <div class="task-card ${isActive && isAutoWatching ? 'vip-active' : ''}">
+            <div class="task-icon">${task.icon}</div>
+            <div class="task-reward">+${s.reward || 40} 🪙</div>
+            <div class="task-counter ${counterClass}">${s.currentCount}/${s.maxCount}</div>
+            <div class="task-status">${statusTxt}</div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+            <button class="task-btn ${btnClass}" id="btn-${task.id}" data-id="${task.id}" ${disabled ? 'disabled' : ''}>${btnTxt}</button>
+        </div>`;
+    });
+    document.getElementById('tasksGrid').innerHTML = html;
+    TASK_CONFIGS.forEach(task => {
+        const btn = document.getElementById(`btn-${task.id}`);
+        if (btn && !btn.disabled) btn.addEventListener('click', () => startWatching(task));
+    });
+}
+
+// ==================== Manual watch ====================
+async function startWatching(task) {
+    if (activeTaskId) { showToast('ယခုကြည့်နေဆဲဖြစ်သည်', 'error'); return; }
+    const ctrl = getAdController(task.blockId);
+    if (!ctrl) { showToast('Adsgram ချိတ်ဆက်မရပါ', 'error'); return; }
+    const s = taskStatus[task.id];
+    if (!s || s.currentCount >= s.maxCount) { showToast('Daily limit ပြည့်သွားပြီ', 'error'); return; }
+    activeTaskId = task.id;
+    renderTasks();
+    try {
+        const result = await ctrl.show();
+        if (result && result.done) {
+            // show 20s overlay, then claim
+            showAdWaitOverlay(s.reward || 40, async () => {
+                await claimReward(task.id, s.reward || 40);
+            });
+        } else {
+            showToast('ကြော်ငြာကို အပြည့်ကြည့်ရမည်', 'error');
+            activeTaskId = null; renderTasks();
+        }
+    } catch(e) {
+        showToast('ကြော်ငြာကို အပြည့်ကြည့်ရမည်', 'error');
+        activeTaskId = null; renderTasks();
+    }
+}
+
+// ==================== Claim reward ====================
+async function claimReward(taskId, reward) {
+    try {
+        const res = await fetch(`${API_BASE}/earn/video`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData },
+            body: JSON.stringify({ taskId, amount: reward })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            if (currentUser) {
+                currentUser.coins = data.newCoins;
+                document.getElementById('totalCoins').textContent = currentUser.coins.toLocaleString();
+            }
+            // Update local status
+            if (taskStatus[taskId]) {
+                taskStatus[taskId].currentCount = data.currentCount;
+                taskStatus[taskId].lastClaim = data.lastClaim;
+                taskStatus[taskId].watchCooldownRemaining = taskStatus[taskId].watchCooldown || 60000;
+                if (data.currentCount >= taskStatus[taskId].maxCount) {
+                    taskStatus[taskId].dailyResetIn = 2 * 60 * 60 * 1000;
+                }
+            }
+            showToast(`✅ +${reward} Coins ရရှိပြီး!`, 'success');
+            await fetchTaskStatus();
+        } else {
+            showToast(data.error || 'Failed', 'error');
+            await fetchTaskStatus();
+        }
+    } catch(e) {
+        showToast('Network error', 'error');
+    } finally {
+        activeTaskId = null;
+        renderTasks();
+    }
+}
+
+// ==================== VIP AUTO WATCH ====================
+function getAvailableForAuto() {
+    return TASK_CONFIGS.filter(task => {
+        const s = taskStatus[task.id];
+        if (!s) return false;
+        return s.currentCount < s.maxCount && s.watchCooldownRemaining === 0;
+    });
+}
+
+async function startAutoWatch() {
+    if (isAutoWatching) return;
+    isAutoWatching = true;
+    autoWatchStopped = false;
+    document.getElementById('vipAutoBanner').style.display = 'flex';
+    document.getElementById('autoProgress').classList.add('show');
+    document.getElementById('allDoneBox').classList.remove('show');
+    await runAutoLoop();
+}
+
+async function runAutoLoop() {
+    if (autoWatchStopped) { stopAutoWatch(); return; }
+    await fetchTaskStatus();
+    const available = getAvailableForAuto();
+    renderAutoSteps(null);
+
+    if (available.length === 0) {
+        const allFull = TASK_CONFIGS.every(t => {
+            const s = taskStatus[t.id];
+            return s && s.currentCount >= s.maxCount;
+        });
+        if (allFull) {
+            document.getElementById('autoStatusText').textContent = 'အားလုံးပြီးပါပြီ! 🎉';
+            document.getElementById('allDoneBox').classList.add('show');
+            stopAutoWatch();
+            return;
+        }
+        // find soonest cooldown
+        let soonest = null;
+        TASK_CONFIGS.forEach(t => {
+            const s = taskStatus[t.id];
+            if (!s || s.currentCount >= s.maxCount) return;
+            const cd = s.watchCooldownRemaining || 0;
+            if (cd > 0 && (!soonest || cd < soonest)) soonest = cd;
+        });
+        if (soonest && soonest > 0) {
+            const mins = Math.ceil(soonest / 60000);
+            document.getElementById('autoStatusText').textContent = `${mins} မိနစ်နောက် ဆက်ကြည့်မည်...`;
+            await sleep(soonest + 1500);
+            if (!autoWatchStopped) await runAutoLoop();
+        } else {
+            stopAutoWatch();
+        }
+        return;
+    }
+
+    const next = available[0];
+    document.getElementById('autoStatusText').textContent = `${next.label} ကြည့်နေသည်...`;
+    renderAutoSteps(next.id);
+
+    await watchOneAuto(next);
+    if (!autoWatchStopped) {
+        await sleep(2000); // 2 second gap between tasks
+        await runAutoLoop();
+    }
+}
+
+async function watchOneAuto(task) {
+    const ctrl = getAdController(task.blockId);
+    if (!ctrl) { showToast(`${task.label}: Adsgram မချိတ်ဆက်နိုင်ပါ`, 'error'); return; }
+    const s = taskStatus[task.id];
+    activeTaskId = task.id;
+    renderTasks();
+    try {
+        const result = await ctrl.show();
+        if (result && result.done) {
+            // 20s overlay, auto-dismiss, then claim
+            await new Promise(resolve => {
+                showAdWaitOverlay(s?.reward || 40, async () => {
+                    await claimReward(task.id, s?.reward || 40);
+                    resolve();
+                });
+            });
+        } else {
+            showToast(`${task.label}: ကြော်ငြာပိတ်သွားသည်`, 'error');
+        }
+    } catch(e) {
+        console.error('Auto ad error:', e);
+    } finally {
+        activeTaskId = null;
+        renderTasks();
+    }
+}
+
+function renderAutoSteps(activeId) {
+    let html = '';
+    TASK_CONFIGS.forEach(task => {
+        const s = taskStatus[task.id];
+        if (!s) return;
+        const full = s.currentCount >= s.maxCount;
+        const onCd = s.watchCooldownRemaining > 0;
+        let cls = '', icon = '⏸';
+        if (full) { cls = 'done'; icon = '✅'; }
+        else if (task.id === activeId) { cls = 'active'; icon = '▶️'; }
+        else if (onCd) icon = '⏳';
+        html += `<div class="auto-step ${cls}"><span class="dot"></span>${icon} ${task.label} (${s.currentCount}/${s.maxCount})</div>`;
+    });
+    document.getElementById('autoSteps').innerHTML = html;
+}
+
+function stopAutoWatch() {
+    isAutoWatching = false;
+    autoWatchStopped = true;
+    activeTaskId = null;
+    document.getElementById('vipAutoBanner').style.display = 'none';
+    document.getElementById('autoProgress').classList.remove('show');
+    renderTasks();
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ==================== Fetch ====================
+async function fetchUser() {
+    try {
+        const res = await fetch(`${API_BASE}/user`, { headers: { 'X-Telegram-Init-Data': initData } });
+        const data = await res.json();
+        if (res.ok) {
+            currentUser = data;
+            document.getElementById('totalCoins').textContent = data.coins.toLocaleString();
+            updateAvatar(data.photoUrl);
+            if (data.vipMode && !isAutoWatching) {
+                await fetchTaskStatus();
+                startAutoWatch();
+            }
+        }
+    } catch(e) { console.error('fetchUser error:', e); }
+}
+
+async function fetchTaskStatus() {
+    try {
+        const res = await fetch(`${API_BASE}/earn/tasks/status`, { headers: { 'X-Telegram-Init-Data': initData } });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            taskStatus = data.tasks;
+            renderTasks();
+        }
+    } catch(e) { console.error('fetchTaskStatus error:', e); }
+}
+
+function goBack() { window.location.href = '/'; }
+
+// Live timer refresh
+setInterval(() => {
+    if (Object.keys(taskStatus).length > 0) {
+        // decrement local cooldowns
+        TASK_CONFIGS.forEach(t => {
+            if (taskStatus[t.id]) {
+                if (taskStatus[t.id].watchCooldownRemaining > 0)
+                    taskStatus[t.id].watchCooldownRemaining = Math.max(0, taskStatus[t.id].watchCooldownRemaining - 1000);
+                if (taskStatus[t.id].dailyResetIn > 0)
+                    taskStatus[t.id].dailyResetIn = Math.max(0, taskStatus[t.id].dailyResetIn - 1000);
+            }
+        });
+        renderTasks();
+    }
+}, 1000);
+
+// Init
+(async function init() {
+    await fetchUser();
+    await fetchTaskStatus();
+    setInterval(fetchTaskStatus, 30000);
+})();
+</script>
+</body>
+</html>

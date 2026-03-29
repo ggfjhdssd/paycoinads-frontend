@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    // ═══════════════════════════════════════
+    // API Base URL — set by Vercel env var
+    // VERCEL env: VITE_API_URL = https://your-backend.onrender.com
+    // ═══════════════════════════════════════
+    window.__API_BASE__ = "%%VITE_API_URL%%";
+  </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayCoinAds • Coin Leaderboard</title>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Pyidaungsu&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Pyidaungsu', sans-serif;
+        }
+
+        body {
+            background: #121212;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        /* Parallax Background */
+        .parallax-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .glow-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.6;
+            animation: floatShape 20s infinite alternate ease-in-out;
+        }
+
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 215, 0, 0.15);
+            top: -100px;
+            left: -100px;
+        }
+
+        .shape-2 {
+            width: 400px;
+            height: 400px;
+            background: rgba(60, 186, 146, 0.1);
+            bottom: -150px;
+            right: -100px;
+            animation-delay: -5s;
+        }
+
+        .shape-3 {
+            width: 250px;
+            height: 250px;
+            background: rgba(255, 165, 0, 0.12);
+            top: 40%;
+            left: 50%;
+            animation-delay: -10s;
+        }
+
+        @keyframes floatShape {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -50px) scale(1.1); }
+            100% { transform: translate(-40px, 40px) scale(0.9); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+            padding: 16px 12px 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background: rgba(20,22,27,0.6);
+            backdrop-filter: blur(16px);
+            padding: 10px 16px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,215,0,0.15);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-balance {
+            background: linear-gradient(145deg, rgba(255,215,0,0.15), rgba(255,165,0,0.05));
+            backdrop-filter: blur(12px);
+            padding: 6px 14px;
+            border-radius: 40px;
+            border: 1px solid rgba(255,215,0,0.4);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 700;
+            font-size: 16px;
+            color: #ffd700;
+        }
+
+        /* Back Button */
+        .back-btn {
+            background: rgba(255,215,0,0.1);
+            border: 1px solid rgba(255,215,0,0.3);
+            color: #ffd700;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,215,0,0.2);
+            transform: translateX(-3px);
+        }
+
+        /* Leaderboard Card */
+        .leaderboard-card {
+            background: rgba(25,27,35,0.6);
+            backdrop-filter: blur(12px);
+            border-radius: 30px;
+            padding: 20px;
+            border: 1px solid rgba(255,215,0,0.2);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .leaderboard-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffd700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rank-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,215,0,0.1);
+        }
+
+        .rank-item:last-child {
+            border-bottom: none;
+        }
+
+        .rank-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .rank-badge {
+            width: 30px;
+            height: 30px;
+            background: rgba(255,215,0,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #ffd700;
+            font-size: 14px;
+        }
+
+        .rank-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(145deg, #2a2a3c, #1a1a28);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            border: 2px solid rgba(255,215,0,0.3);
+            overflow: hidden;
+        }
+
+        .rank-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .rank-info {
+            flex: 1;
+        }
+
+        .rank-name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .rank-coins {
+            font-size: 12px;
+            color: #8e8e9d;
+        }
+
+        .rank-value {
+            font-weight: 700;
+            color: #ffd700;
+            font-size: 16px;
+        }
+
+        .footer {
+            text-align: center;
+            color: #5e5e71;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #ffd700;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="parallax-bg">
+        <div class="glow-shape shape-1"></div>
+        <div class="glow-shape shape-2"></div>
+        <div class="glow-shape shape-3"></div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Coin Leaderboard</h1>
+            <div class="header-balance">
+                <span>🪙</span>
+                <span id="totalCoins">0</span>
+            </div>
+        </div>
+
+        <button class="back-btn" onclick="goBack()">
+            ← Back to Games
+        </button>
+
+        <div class="leaderboard-card">
+            <div class="leaderboard-title">
+                <span>🏆 Top 5 Coin Holders</span>
+            </div>
+            <div id="leaderboardList">
+                <div class="loading">Loading...</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Earn more coins to reach the top!
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = (window.__API_BASE__ || '') + '/api';
+        const tg = window.Telegram?.WebApp;
+        if (tg) { tg.expand(); tg.ready(); }
+
+        async function fetchLeaderboard() {
+            try {
+                const res = await fetch(`${API_BASE}/leaderboard`);
+                const data = await res.json();
+                if (res.ok && Array.isArray(data)) {
+                    renderLeaderboard(data);
+                } else {
+                    document.getElementById('leaderboardList').innerHTML = '<div class="loading">No data available</div>';
+                }
+            } catch (err) {
+                console.error('Failed to load leaderboard:', err);
+                document.getElementById('leaderboardList').innerHTML = '<div class="loading">Failed to load</div>';
+            }
+        }
+
+        function renderLeaderboard(users) {
+            const container = document.getElementById('leaderboardList');
+            if (!users || users.length === 0) {
+                container.innerHTML = '<div class="loading">No data yet</div>';
+                return;
+            }
+
+            let html = '';
+            users.forEach(user => {
+                const avatarHtml = user.photo 
+                    ? `<img src="${user.photo}" onerror="this.onerror=null; this.parentNode.innerHTML='👤';">`
+                    : '👤';
+                
+                // Format coins with thousand separator
+                const formattedCoins = user.totalCoins.toLocaleString();
+                
+                html += `
+                    <div class="rank-item">
+                        <div class="rank-left">
+                            <div class="rank-badge">${user.rank}</div>
+                            <div class="rank-avatar">${avatarHtml}</div>
+                            <div class="rank-info">
+                                <div class="rank-name">${user.name}</div>
+                                <div class="rank-coins">💰 ${formattedCoins} coins</div>
+                            </div>
+                        </div>
+                        <div class="rank-value">${formattedCoins}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        async function fetchUserBalance() {
+            try {
+                const initData = tg?.initData || '';
+                const res = await fetch(`${API_BASE}/user`, {
+                    headers: { 'X-Telegram-Init-Data': initData }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('totalCoins').textContent = data.coins.toLocaleString();
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function goBack() {
+            window.location.href = '/games.html';
+        }
+
+        // Initialize
+        fetchLeaderboard();
+        fetchUserBalance();
+        
+        // Auto-refresh every 60 seconds
+        setInterval(fetchLeaderboard, 60000);
+        setInterval(fetchUserBalance, 30000);
+    </script>
+</body>
+</html>
