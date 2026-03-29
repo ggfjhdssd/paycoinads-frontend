@@ -529,20 +529,31 @@ function stopAutoWatch() {
 
 // ==================== Reset Timer ====================
 let resetTimerInterval = null;
+let resetTriggeredForCycle = false; // prevent multiple reset calls per cycle
+
+async function triggerTaskReset(taskId) {
+    try {
+        const res = await fetch(`${API_BASE}/earn/reset-task`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData },
+            body: JSON.stringify({ taskId })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast(`🔄 ${taskId} ပြန်စသည် — ဆက်ကြည့်ပါ!`, 'success', 3000);
+        }
+    } catch(e) {
+        console.error('Reset task error:', e);
+    }
+}
 
 function updateResetTimer() {
-    // Find the task with the earliest firstClaimTime that is still full (4/4)
-    let earliestFirstClaim = null;
     const DAILY_COOLDOWN = 10 * 60 * 1000; // 10 minutes
 
-    TASK_CONFIGS.forEach(t => {
+    // Collect tasks that are full and have a firstClaimTime
+    const fullTasks = TASK_CONFIGS.filter(t => {
         const s = taskStatus[t.id];
-        if (!s) return;
-        if (s.currentCount >= s.maxCount && s.firstClaimTime > 0) {
-            if (!earliestFirstClaim || s.firstClaimTime < earliestFirstClaim) {
-                earliestFirstClaim = s.firstClaimTime;
-            }
-        }
+        return s && s.currentCount >= s.maxCount && s.firstClaimTime > 0;
     });
 
     const allFull = TASK_CONFIGS.every(t => {
@@ -554,20 +565,39 @@ function updateResetTimer() {
     const resetTimerBox = document.getElementById('resetTimerBox');
     const resetTimerDisplay = document.getElementById('resetTimerDisplay');
 
-    if (allFull && earliestFirstClaim) {
+    if (allFull && fullTasks.length > 0) {
+        // Use the earliest firstClaimTime as the reset reference
+        const earliestFirstClaim = fullTasks.reduce((min, t) => {
+            const ft = taskStatus[t.id].firstClaimTime;
+            return ft < min ? ft : min;
+        }, fullTasks[0] ? taskStatus[fullTasks[0].id].firstClaimTime : Date.now());
+
         allDoneBox.classList.add('show');
         resetTimerBox.style.display = 'block';
 
-        // Calculate time remaining until reset
         const elapsed = Date.now() - earliestFirstClaim;
         const remaining = Math.max(0, DAILY_COOLDOWN - elapsed);
 
         if (remaining <= 0) {
             resetTimerDisplay.textContent = '00:00';
             resetTimerDisplay.style.color = '#3cba92';
-            // Auto-refresh task status when timer hits 0
-            fetchTaskStatus();
+
+            // Trigger backend reset for all full tasks (once per cycle)
+            if (!resetTriggeredForCycle) {
+                resetTriggeredForCycle = true;
+                Promise.all(
+                    fullTasks.map(t => triggerTaskReset(t.id))
+                ).then(() => {
+                    // Re-fetch fresh status from server after all resets
+                    setTimeout(() => {
+                        resetTriggeredForCycle = false;
+                        fetchTaskStatus();
+                    }, 1500);
+                });
+            }
         } else {
+            // Reset the guard whenever there's still time remaining
+            resetTriggeredForCycle = false;
             const mins = Math.floor(remaining / 60000);
             const secs = Math.ceil((remaining % 60000) / 1000);
             resetTimerDisplay.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
@@ -576,6 +606,7 @@ function updateResetTimer() {
     } else {
         allDoneBox.classList.remove('show');
         resetTimerBox.style.display = 'none';
+        resetTriggeredForCycle = false;
     }
 }
 

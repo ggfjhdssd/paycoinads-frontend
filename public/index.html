@@ -849,11 +849,13 @@
                 dailyBtn.innerText = 'Check-in';
             }
             
-            const taskCooldown = 15 * 60 * 1000; // 15 minutes
+            // Tasks: use 5-second grace buffer so button re-enables exactly when cooldown ends
+            const taskCooldown = 15 * 60 * 1000;
+            const GRACE_MS = 5000;
             document.querySelectorAll('.task-btn').forEach(btn => {
                 const taskId = btn.dataset.id;
                 const taskLastClaim = data.tasks?.[taskId] || 0;
-                const taskRemaining = taskCooldown - (now - taskLastClaim);
+                const taskRemaining = (taskCooldown - GRACE_MS) - (now - taskLastClaim);
                 
                 if (taskRemaining > 0) {
                     btn.disabled = true;
@@ -864,7 +866,6 @@
                 }
             });
         }
-
         
         function startLiveCountdown() {
             setInterval(() => {
@@ -885,12 +886,13 @@
                         dailyBtn.innerText = 'Check-in';
                     }
                     
-                    // Tasks
-                    const taskCooldown = 15 * 60 * 1000; // 15 minutes
+                    // Tasks: 5-second grace buffer so the button unlocks at the right moment
+                    const taskCooldown = 15 * 60 * 1000;
+                    const GRACE_MS = 5000;
                     document.querySelectorAll('.task-btn').forEach(btn => {
                         const taskId = btn.dataset.id;
                         const taskLastClaim = userDataCache.tasks?.[taskId] || 0;
-                        const taskRemaining = taskCooldown - (now - taskLastClaim);
+                        const taskRemaining = (taskCooldown - GRACE_MS) - (now - taskLastClaim);
                         
                         if (taskRemaining > 0) {
                             btn.disabled = true;
@@ -940,11 +942,13 @@
         async function showAdAndReward(taskType, taskId = null) {
             if (!currentUserId) { showHomeToast('User data ရယူနေဆဲ...', 'error'); return; }
 
-            // ── Cooldown pre-check (prevent showing ad when still on cooldown) ──
+            // ── Cooldown pre-check — use a 5-second grace so we don't block
+            //    users whose cooldown expired while they were opening the app ──
             if (taskId && userDataCache) {
                 const taskCooldown = 15 * 60 * 1000;
+                const GRACE_MS = 5000;
                 const lastClaim = userDataCache.tasks?.[taskId] || 0;
-                const remaining = taskCooldown - (Date.now() - lastClaim);
+                const remaining = (taskCooldown - GRACE_MS) - (Date.now() - lastClaim);
                 if (remaining > 0) {
                     const mins = Math.ceil(remaining / 60000);
                     showHomeToast(`⏳ ${mins} မိနစ်ကြာမှ ထပ်ကြည့်နိုင်သည်`, 'error', 3000);
