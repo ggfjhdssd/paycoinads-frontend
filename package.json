@@ -1,10 +1,8 @@
 {
   "name": "paycoinads-frontend",
   "version": "1.0.0",
-  "description": "PayCoinADS Frontend - Vercel",
   "scripts": {
-    "build": "node build.js",
-    "dev": "node build.js"
+    "build": "echo 'No build needed'"
   },
   "engines": {
     "node": "20.x"
