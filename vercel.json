@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "buildCommand": "node build.js",
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/games",           "destination": "/games.html" },
+    { "source": "/games.html",      "destination": "/games.html" },
+    { "source": "/earn",            "destination": "/earn.html" },
+    { "source": "/earn.html",       "destination": "/earn.html" },
+    { "source": "/admin",           "destination": "/admin.html" },
+    { "source": "/admin.html",      "destination": "/admin.html" },
+    { "source": "/dashboard",       "destination": "/dashboard.html" },
+    { "source": "/dashboard.html",  "destination": "/dashboard.html" },
+    { "source": "/vpn",             "destination": "/vpn.html" },
+    { "source": "/vpn.html",        "destination": "/vpn.html" },
+    { "source": "/lucky-wheel",     "destination": "/lucky-wheel/index.html" },
+    { "source": "/lucky-wheel/",    "destination": "/lucky-wheel/index.html" },
+    { "source": "/coin-clicker",    "destination": "/coin-clicker/index.html" },
+    { "source": "/coin-clicker/",   "destination": "/coin-clicker/index.html" },
+    { "source": "/",                "destination": "/index.html" },
+    { "source": "/(.*)",            "destination": "/$1" }
+  ]
+}
