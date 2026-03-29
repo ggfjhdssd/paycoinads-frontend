@@ -1,14 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>
-    // ═══════════════════════════════════════
-    // API Base URL — set by Vercel env var
-    // VERCEL env: VITE_API_URL = https://your-backend.onrender.com
-    // ═══════════════════════════════════════
-    window.__API_BASE__ = "%%VITE_API_URL%%";
-  </script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PayCoinAds • Watch & Earn</title>
@@ -171,20 +163,10 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const API_BASE = (window.__API_BASE__ || '') + '/api';
+const API_BASE = '/api';
 const tg = window.Telegram?.WebApp;
 if (tg) { tg.expand(); tg.ready(); }
-
-// Wait for Telegram initData to be injected
-function getInitData() { return window.Telegram?.WebApp?.initData || ''; }
-async function waitForInitData(maxMs = 5000) {
-    const t = Date.now();
-    while (!getInitData() && Date.now() - t < maxMs) {
-        await new Promise(r => setTimeout(r, 100));
-    }
-    return getInitData();
-}
-let initData = getInitData();
+const initData = tg?.initData || '';
 
 let currentUser = null;
 let activeTaskId = null;
@@ -505,9 +487,6 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 // ==================== Fetch ====================
 async function fetchUser() {
     try {
-        const live = await waitForInitData(5000);
-        if (!live) { setTimeout(fetchUser, 1000); return; }
-        initData = live;
         const res = await fetch(`${API_BASE}/user`, { headers: { 'X-Telegram-Init-Data': initData } });
         const data = await res.json();
         if (res.ok) {
@@ -518,16 +497,13 @@ async function fetchUser() {
                 await fetchTaskStatus();
                 startAutoWatch();
             }
-        } else if (res.status === 401 || res.status === 403) {
-            setTimeout(fetchUser, 1500);
         }
-    } catch(e) { console.error('fetchUser error:', e); setTimeout(fetchUser, 2000); }
+    } catch(e) { console.error('fetchUser error:', e); }
 }
 
 async function fetchTaskStatus() {
     try {
-        const live = initData || await waitForInitData(5000);
-        const res = await fetch(`${API_BASE}/earn/tasks/status`, { headers: { 'X-Telegram-Init-Data': live } });
+        const res = await fetch(`${API_BASE}/earn/tasks/status`, { headers: { 'X-Telegram-Init-Data': initData } });
         const data = await res.json();
         if (res.ok && data.success) {
             taskStatus = data.tasks;

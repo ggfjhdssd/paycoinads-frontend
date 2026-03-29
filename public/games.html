@@ -1,14 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>
-    // ═══════════════════════════════════════
-    // API Base URL — set by Vercel env var
-    // VERCEL env: VITE_API_URL = https://your-backend.onrender.com
-    // ═══════════════════════════════════════
-    window.__API_BASE__ = "%%VITE_API_URL%%";
-  </script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PayCoinAds • Games</title>
@@ -508,7 +500,7 @@
         (async function() {
             try {
                 const initData = window.Telegram?.WebApp?.initData || '';
-                const response = await fetch((window.__API_BASE__ || '') + '/api/check-vpn', {
+                const response = await fetch('/api/check-vpn', {
                     headers: { 'X-Telegram-Init-Data': initData }
                 });
                 const data = await response.json();
@@ -522,23 +514,13 @@
             }
         })();
 
-        const API_BASE = (window.__API_BASE__ || '') + '/api';
+        const API_BASE = '/api';
         const tg = window.Telegram?.WebApp;
         let currentUserId = null;
 
         if (tg) {
             tg.expand();
             tg.ready();
-        // Wait for Telegram initData (async injection fix)
-        function getInitData() { return window.Telegram?.WebApp?.initData || ''; }
-        async function waitForInitData(maxMs = 5000) {
-            const t = Date.now();
-            while (!getInitData() && Date.now() - t < maxMs) {
-                await new Promise(r => setTimeout(r, 100));
-            }
-            return getInitData();
-        }
-
             console.log('Telegram WebApp initialized');
         }
 

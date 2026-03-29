@@ -1,14 +1,6 @@
 <!DOCTYPE html>
 <html lang="my">
 <head>
-  <script>
-    // ═══════════════════════════════════════
-    // API Base URL — set by Vercel env var
-    // VERCEL env: VITE_API_URL = https://your-backend.onrender.com
-    // ═══════════════════════════════════════
-    window.__API_BASE__ = "%%VITE_API_URL%%";
-  </script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Security Check • PayCoinAds</title>
@@ -234,16 +226,6 @@
         if (tg) {
             tg.expand();
             tg.ready();
-        // Wait for Telegram initData (async injection fix)
-        function getInitData() { return window.Telegram?.WebApp?.initData || ''; }
-        async function waitForInitData(maxMs = 5000) {
-            const t = Date.now();
-            while (!getInitData() && Date.now() - t < maxMs) {
-                await new Promise(r => setTimeout(r, 100));
-            }
-            return getInitData();
-        }
-
             // Set header color to match bg
             tg.setHeaderColor('#05070a');
             tg.setBackgroundColor('#05070a');
@@ -265,7 +247,7 @@
 
             try {
                 // Fetch to Backend
-                const response = await fetch((window.__API_BASE__ || '') + '/api/check-vpn', {
+                const response = await fetch('/api/check-vpn', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',

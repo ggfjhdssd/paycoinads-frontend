@@ -1,14 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>
-    // ═══════════════════════════════════════
-    // API Base URL — set by Vercel env var
-    // VERCEL env: VITE_API_URL = https://your-backend.onrender.com
-    // ═══════════════════════════════════════
-    window.__API_BASE__ = "%%VITE_API_URL%%";
-  </script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PayCoinADS • Galaxy God Mode</title>
@@ -836,12 +828,8 @@
                     <input type="number" class="setting-input" id="DAILY_REWARD" value="24">
                 </div>
                 <div class="setting-item">
-                    <div class="setting-label">🏠 Home Task Reward (coins)</div>
-                    <input type="number" class="setting-input" id="HOME_TASK_REWARD" value="45">
-                </div>
-                <div class="setting-item">
-                    <div class="setting-label">🎬 Earn Task Reward (coins)</div>
-                    <input type="number" class="setting-input" id="TASK_REWARD" value="40">
+                    <div class="setting-label">⚡ Task Reward</div>
+                    <input type="number" class="setting-input" id="TASK_REWARD" value="50">
                 </div>
                 <div class="setting-item">
                     <div class="setting-label">💰 Min Withdrawal</div>
@@ -895,17 +883,7 @@
 
     <script>
         const tg = window.Telegram?.WebApp;
-        if (tg) { tg.expand(); tg.ready();
-        // Wait for Telegram initData (async injection fix)
-        function getInitData() { return window.Telegram?.WebApp?.initData || ''; }
-        async function waitForInitData(maxMs = 5000) {
-            const t = Date.now();
-            while (!getInitData() && Date.now() - t < maxMs) {
-                await new Promise(r => setTimeout(r, 100));
-            }
-            return getInitData();
-        }
- }
+        if (tg) { tg.expand(); tg.ready(); }
         const initData = tg?.initData || '';
 
         // State
@@ -963,7 +941,7 @@
             const wrapper = document.getElementById('vipPurchasesWrapper');
             wrapper.innerHTML = '<div class="loading-state"><div class="galaxy-loader"></div><div class="loading-text">Loading...</div></div>';
             try {
-                const res = await fetch((window.__API_BASE__ || '') + '/api/admin/vip/purchases', { headers: { 'X-Telegram-Init-Data': initData } });
+                const res = await fetch('/api/admin/vip/purchases', { headers: { 'X-Telegram-Init-Data': initData } });
                 const data = await res.json();
                 if (!res.ok) { wrapper.innerHTML = `<p style="color:#ff4757;padding:20px">${data.error}</p>`; return; }
                 const purchases = data.purchases || [];
@@ -1001,7 +979,7 @@
         window.confirmVip = async function(purchaseId, userId) {
             if (!confirm(`User ${userId} ကို VIP 30 ရက် Confirm မည်?`)) return;
             try {
-                const res = await fetch(`${window.__API_BASE__ || ''}/api/admin/vip/${purchaseId}/confirm`, {
+                const res = await fetch(`/api/admin/vip/${purchaseId}/confirm`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData }
                 });
@@ -1018,7 +996,7 @@
         window.rejectVip = async function(purchaseId) {
             if (!confirm('VIP request ကို Reject မည်?')) return;
             try {
-                const res = await fetch(`${window.__API_BASE__ || ''}/api/admin/vip/${purchaseId}/reject`, {
+                const res = await fetch(`/api/admin/vip/${purchaseId}/reject`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData }
                 });
@@ -1031,7 +1009,7 @@
 
         async function fetchStats() {
             try {
-                const res = await fetch((window.__API_BASE__ || '') + '/api/admin/stats', { headers: { 'X-Telegram-Init-Data': initData } });
+                const res = await fetch('/api/admin/stats', { headers: { 'X-Telegram-Init-Data': initData } });
                 const data = await res.json();
                 if (res.ok) {
                     pendingWithdrawalsEl.textContent = formatNumber(data.pendingWithdrawals || 0);
@@ -1046,7 +1024,7 @@
             const wrapper = document.getElementById('usersTableWrapper');
             wrapper.innerHTML = `<div class="loading-state"><div class="galaxy-loader"></div><div class="loading-text">Loading galaxy data...</div></div>`;
             try {
-                const res = await fetch((window.__API_BASE__ || '') + '/api/admin/users', { headers: { 'X-Telegram-Init-Data': initData } });
+                const res = await fetch('/api/admin/users', { headers: { 'X-Telegram-Init-Data': initData } });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error);
                 adminStatusEl.textContent = '✅ Admin Verified';
@@ -1114,7 +1092,7 @@
             const action = currentlyHasVip ? 'VIP ဖျက်မည်' : 'VIP 30 ရက် ပေးမည်';
             if (!confirm(`User ${userId} အား ${action}?`)) return;
             try {
-                const res = await fetch(`${window.__API_BASE__ || ''}/api/admin/users/${userId}/vip`, {
+                const res = await fetch(`/api/admin/users/${userId}/vip`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData },
                     body: JSON.stringify({ enable: !currentlyHasVip })
@@ -1136,7 +1114,7 @@
             if (!confirm(`Are you sure you want to ${action} VIP bypass for user ${userId}?`)) return;
             
             try {
-                const res = await fetch(`${window.__API_BASE__ || ''}/api/admin/users/${userId}/toggle-bypass`, {
+                const res = await fetch(`/api/admin/users/${userId}/toggle-bypass`, {
                     method: 'POST',
                     headers: { 'X-Telegram-Init-Data': initData }
                 });
@@ -1283,7 +1261,7 @@
         window.approveWithdrawal = async function(id) {
             if (!confirm('Approve this withdrawal?')) return;
             try {
-                const res = await fetch(`${window.__API_BASE__ || ''}/api/admin/withdrawals/${id}/approve`, {
+                const res = await fetch(`/api/admin/withdrawals/${id}/approve`, {
                     method: 'POST',
                     headers: { 'X-Telegram-Init-Data': initData }
                 });
@@ -1315,7 +1293,7 @@
                 const reason = modalReason.value;
                 if (!reason) { showToast('Please enter a reason', 'error'); return; }
                 try {
-                    const res = await fetch(`${window.__API_BASE__ || ''}/api/admin/withdrawals/${id}/reject`, {
+                    const res = await fetch(`/api/admin/withdrawals/${id}/reject`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData },
                         body: JSON.stringify({ reason })
@@ -1337,12 +1315,11 @@
 
         async function loadSettings() {
             try {
-                const res = await fetch((window.__API_BASE__ || '') + '/api/admin/settings', { headers: { 'X-Telegram-Init-Data': initData } });
+                const res = await fetch('/api/admin/settings', { headers: { 'X-Telegram-Init-Data': initData } });
                 const settings = await res.json();
                 document.getElementById('REFERRAL_REWARD').value = settings.REFERRAL_REWARD || 10;
                 document.getElementById('DAILY_REWARD').value = settings.DAILY_REWARD || 24;
-                document.getElementById('HOME_TASK_REWARD').value = settings.HOME_TASK_REWARD || 45;
-                document.getElementById('TASK_REWARD').value = settings.TASK_REWARD || 40;
+                document.getElementById('TASK_REWARD').value = settings.TASK_REWARD || 30;
                 document.getElementById('MIN_WITHDRAWAL').value = settings.MIN_WITHDRAWAL || 160000;
                 document.getElementById('MAINTENANCE_MODE').checked = settings.MAINTENANCE_MODE || false;
                 document.getElementById('MAINTENANCE_MESSAGE').value = settings.MAINTENANCE_MESSAGE || 'Site is under maintenance.';
@@ -1354,14 +1331,13 @@
             const settings = {
                 REFERRAL_REWARD: parseInt(document.getElementById('REFERRAL_REWARD').value),
                 DAILY_REWARD: parseInt(document.getElementById('DAILY_REWARD').value),
-                HOME_TASK_REWARD: parseInt(document.getElementById('HOME_TASK_REWARD').value),
                 TASK_REWARD: parseInt(document.getElementById('TASK_REWARD').value),
                 MIN_WITHDRAWAL: parseInt(document.getElementById('MIN_WITHDRAWAL').value),
                 MAINTENANCE_MODE: document.getElementById('MAINTENANCE_MODE').checked,
                 MAINTENANCE_MESSAGE: document.getElementById('MAINTENANCE_MESSAGE').value
             };
             try {
-                const res = await fetch((window.__API_BASE__ || '') + '/api/admin/settings', {
+                const res = await fetch('/api/admin/settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData },
                     body: JSON.stringify(settings)
@@ -1381,7 +1357,7 @@
             if (!msg) { showToast('Enter a message', 'error'); return; }
             if (!confirm('Send broadcast to all users?')) return;
             try {
-                const res = await fetch((window.__API_BASE__ || '') + '/api/admin/broadcast', {
+                const res = await fetch('/api/admin/broadcast', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData },
                     body: JSON.stringify({ message: msg })

@@ -1,14 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>
-    // ═══════════════════════════════════════
-    // API Base URL — set by Vercel env var
-    // VERCEL env: VITE_API_URL = https://your-backend.onrender.com
-    // ═══════════════════════════════════════
-    window.__API_BASE__ = "%%VITE_API_URL%%";
-  </script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PayCoinAds • Premium</title>
@@ -493,7 +485,7 @@
         (async function() {
             try {
                 const initData = window.Telegram?.WebApp?.initData || '';
-                const response = await fetch((window.__API_BASE__ || '') + '/api/check-vpn', {
+                const response = await fetch('/api/check-vpn', {
                     headers: { 'X-Telegram-Init-Data': initData }
                 });
                 const data = await response.json();
@@ -507,35 +499,13 @@
             }
         })();
 
-        const API_BASE = (window.__API_BASE__ || '') + '/api';
-
-        // ── Telegram WebApp init ──────────────────────────────
+        const API_BASE = '/api';
         const tg = window.Telegram?.WebApp;
-        if (tg) {
-            tg.expand();
-            tg.ready();
-            // Lock portrait on mobile
-            if (tg.setHeaderColor) tg.setHeaderColor('#05070a');
-            if (tg.setBackgroundColor) tg.setBackgroundColor('#05070a');
-        }
-
-        // Wait until initData is available (Telegram injects it async sometimes)
-        function getInitData() {
-            return window.Telegram?.WebApp?.initData || '';
-        }
-        async function waitForInitData(maxWaitMs = 5000) {
-            const start = Date.now();
-            while (!getInitData() && Date.now() - start < maxWaitMs) {
-                await new Promise(r => setTimeout(r, 100));
-            }
-            return getInitData();
-        }
-
-        const initData = getInitData(); // sync fallback
+        if (tg) { tg.expand(); tg.ready(); }
+        const initData = tg?.initData || '';
         let currentUserId = null;
         let userDataCache = null;
         let vipScreenshotData = null;
-        let vipScreenshotFile = null;
         let selectedVipMethod = 'kpay';
 
         let AdController = null;
@@ -756,26 +726,11 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = (e) => {
-                // Compress image before storing
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_SIZE = 800;
-                    let w = img.width, h = img.height;
-                    if (w > MAX_SIZE || h > MAX_SIZE) {
-                        if (w > h) { h = Math.round(h * MAX_SIZE / w); w = MAX_SIZE; }
-                        else { w = Math.round(w * MAX_SIZE / h); h = MAX_SIZE; }
-                    }
-                    canvas.width = w;
-                    canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    vipScreenshotData = canvas.toDataURL('image/jpeg', 0.7);
-                    const preview = document.getElementById('screenshotPreview');
-                    preview.src = vipScreenshotData;
-                    preview.style.display = 'block';
-                    document.querySelector('#screenshotUploadArea p').textContent = '✅ Screenshot တင်ပြီးပါပြီ';
-                };
-                img.src = e.target.result;
+                vipScreenshotData = e.target.result;
+                const preview = document.getElementById('screenshotPreview');
+                preview.src = vipScreenshotData;
+                preview.style.display = 'block';
+                document.querySelector('#screenshotUploadArea p').textContent = '✅ Screenshot တင်ပြီးပါပြီ';
             };
             reader.readAsDataURL(file);
         }
@@ -901,29 +856,17 @@
 
         async function fetchUser() {
             try {
-                // Wait for Telegram initData (may take a moment to inject)
-                const liveInitData = await waitForInitData(5000);
-                if (!liveInitData) {
-                    console.warn('initData not available — retrying in 1s');
-                    setTimeout(fetchUser, 1000);
-                    return;
-                }
                 const res = await fetch(`${API_BASE}/user`, {
-                    headers: { 'X-Telegram-Init-Data': liveInitData }
+                    headers: { 'X-Telegram-Init-Data': initData }
                 });
                 const data = await res.json();
                 if (res.ok) {
                     updateUI(data);
                 } else {
                     console.error('API error:', data.error);
-                    // Retry once on auth errors (initData timing issue)
-                    if (res.status === 401 || res.status === 403) {
-                        setTimeout(fetchUser, 1500);
-                    }
                 }
             } catch (err) { 
                 console.error('Network error:', err);
-                setTimeout(fetchUser, 2000);
             }
         }
 
