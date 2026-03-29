@@ -535,6 +535,9 @@
         let homeAutoWatching = false;
         let homeAutoStopped = false;
         const HOME_TASK_IDS = ['task1', 'task2', 'task3', 'task4'];
+        // Clock-drift fix: track claim time on client side independently from server
+        // Use Math.max(serverTimestamp, clientTimestamp) so countdown is always accurate
+        const clientTaskClaims = {};
         // Home tasks each use same blockId as earn page (task index 0-3)
         const HOME_TASK_BLOCK_IDS = { task1:'23898', task2:'23919', task3:'26247', task4:'26248' };
         const homeAdControllers = {};
@@ -849,12 +852,13 @@
                 dailyBtn.innerText = 'Check-in';
             }
             
-            // Tasks: use 5-second grace buffer so button re-enables exactly when cooldown ends
+            // Tasks: use Math.max(server, client) to handle clock drift — whichever is later wins
             const taskCooldown = 15 * 60 * 1000;
             const GRACE_MS = 5000;
             document.querySelectorAll('.task-btn').forEach(btn => {
                 const taskId = btn.dataset.id;
-                const taskLastClaim = data.tasks?.[taskId] || 0;
+                // Clock-drift fix: use the later of server vs client timestamp
+                const taskLastClaim = Math.max(data.tasks?.[taskId] || 0, clientTaskClaims[taskId] || 0);
                 const taskRemaining = (taskCooldown - GRACE_MS) - (now - taskLastClaim);
                 
                 if (taskRemaining > 0) {
@@ -886,12 +890,13 @@
                         dailyBtn.innerText = 'Check-in';
                     }
                     
-                    // Tasks: 5-second grace buffer so the button unlocks at the right moment
+                    // Tasks: Math.max(server, client) so countdown is always accurate
                     const taskCooldown = 15 * 60 * 1000;
                     const GRACE_MS = 5000;
                     document.querySelectorAll('.task-btn').forEach(btn => {
                         const taskId = btn.dataset.id;
-                        const taskLastClaim = userDataCache.tasks?.[taskId] || 0;
+                        // Clock-drift fix: use the later of server vs client timestamp
+                        const taskLastClaim = Math.max(userDataCache.tasks?.[taskId] || 0, clientTaskClaims[taskId] || 0);
                         const taskRemaining = (taskCooldown - GRACE_MS) - (now - taskLastClaim);
                         
                         if (taskRemaining > 0) {
@@ -947,7 +952,8 @@
             if (taskId && userDataCache) {
                 const taskCooldown = 15 * 60 * 1000;
                 const GRACE_MS = 5000;
-                const lastClaim = userDataCache.tasks?.[taskId] || 0;
+                // Clock-drift fix: use the later of server vs client timestamp
+                const lastClaim = Math.max(userDataCache.tasks?.[taskId] || 0, clientTaskClaims[taskId] || 0);
                 const remaining = (taskCooldown - GRACE_MS) - (Date.now() - lastClaim);
                 if (remaining > 0) {
                     const mins = Math.ceil(remaining / 60000);
@@ -1003,6 +1009,8 @@
                             if (!userDataCache.tasks) userDataCache.tasks = {};
                             userDataCache.tasks[taskId] = Date.now();
                         }
+                        // Clock-drift fix: also stamp client-side so countdown is instant & accurate
+                        if (taskId) clientTaskClaims[taskId] = Date.now();
                         if (taskType === 'daily' && userDataCache) {
                             userDataCache.dailyLastClaim = Date.now();
                         }

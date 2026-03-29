@@ -367,8 +367,14 @@ async function claimReward(taskId, reward) {
                 taskStatus[taskId].currentCount = data.currentCount;
                 taskStatus[taskId].lastClaim = data.lastClaim;
                 taskStatus[taskId].watchCooldownRemaining = taskStatus[taskId].watchCooldown || 60000;
+                // Fix: sync firstClaimTime from server response so reset timer is accurate
+                if (data.firstClaimTime) {
+                    taskStatus[taskId].firstClaimTime = data.firstClaimTime;
+                }
+                // Fix: calculate dailyResetIn based on actual 10-min cooldown from firstClaimTime
                 if (data.currentCount >= taskStatus[taskId].maxCount) {
-                    taskStatus[taskId].dailyResetIn = 20 * 60 * 1000;
+                    const firstClaim = data.firstClaimTime || Date.now();
+                    taskStatus[taskId].dailyResetIn = Math.max(0, (10 * 60 * 1000) - (Date.now() - firstClaim));
                 }
             }
             showToast(`✅ +${reward} Coins ရရှိပြီး!`, 'success');
