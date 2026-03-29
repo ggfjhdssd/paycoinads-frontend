@@ -211,6 +211,15 @@
 
         /* VIP Toggle Button */
         .vip-toggle-row { display: flex; align-items: center; justify-content: space-between; background: rgba(25,27,35,0.8); border: 1px solid rgba(255,215,0,0.2); border-radius: 20px; padding: 14px 18px; margin-bottom: 14px; cursor: pointer; transition: all 0.3s; }
+
+        /* Reset Task Section */
+        .reset-task-section { background: rgba(25,27,35,0.7); border: 1px solid rgba(255,100,100,0.25); border-radius: 20px; padding: 14px 18px; margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .reset-task-left { flex: 1; }
+        .reset-task-left h4 { font-size: 14px; font-weight: 700; color: #ff8c8c; margin-bottom: 3px; }
+        .reset-task-left p { font-size: 11px; color: #8e8e9d; }
+        .reset-task-btn { background: linear-gradient(135deg, rgba(255,80,80,0.2), rgba(255,100,50,0.1)); border: 1px solid rgba(255,100,100,0.45); color: #ff8c8c; padding: 9px 16px; border-radius: 30px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; font-family: inherit; transition: all 0.3s; }
+        .reset-task-btn:hover:not(:disabled) { background: rgba(255,80,80,0.3); box-shadow: 0 0 12px rgba(255,80,80,0.2); }
+        .reset-task-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .vip-toggle-row:hover { border-color: rgba(255,215,0,0.5); background: rgba(30,32,42,0.9); }
         .vip-toggle-left { display: flex; align-items: center; gap: 12px; }
         .vip-toggle-left .icon { font-size: 26px; }
@@ -324,7 +333,15 @@
             <div class="task-card"><div class="task-icon">🪙</div><div class="task-info"><h4>Task 2</h4><p>+45 coins (Watch Ad)</p></div><button class="btn-modern task-btn" data-id="task2">Get +45</button></div>
             <div class="task-card"><div class="task-icon">🪙</div><div class="task-info"><h4>Task 3</h4><p>+45 coins (Watch Ad)</p></div><button class="btn-modern task-btn" data-id="task3">Get +45</button></div>
             <div class="task-card"><div class="task-icon">🪙</div><div class="task-info"><h4>Task 4</h4><p>+45 coins (Watch Ad)</p></div><button class="btn-modern task-btn" data-id="task4">Get +45</button></div>
-        </div>
+
+            <!-- Reset Task Section (shown for non-VIP users only) -->
+            <div class="reset-task-section" id="resetTaskSection" style="display:none;">
+                <div class="reset-task-left">
+                    <h4>🔄 Reset Task</h4>
+                    <p id="resetTaskSubText">Home + Earn task အားလုံး ပြန်စသည်</p>
+                </div>
+                <button class="reset-task-btn" id="resetTaskBtn" onclick="handleResetTask()">Reset</button>
+            </div>
 
         <div id="earnSection" class="section">
             <div class="placeholder-box" onclick="window.location.href='/earn.html'" style="cursor: pointer;">
@@ -666,6 +683,9 @@
             }
             
             applyCooldowns(data);
+            // Update Reset Task button visibility & countdown
+            updateResetTaskUI(data);
+            startResetTaskCountdown(data);
         }
 
         function updateVipUI(data) {
@@ -909,6 +929,81 @@
                     });
                 }
             }, 1000);
+        }
+
+        // ==================== Reset Task ====================
+        let resetTaskCooldownInterval = null;
+
+        function updateResetTaskUI(userData) {
+            const section = document.getElementById('resetTaskSection');
+            const btn = document.getElementById('resetTaskBtn');
+            const subText = document.getElementById('resetTaskSubText');
+            if (!section || !btn) return;
+
+            const now = new Date();
+            const isVip = userData.vipMode && userData.vipExpiry && new Date(userData.vipExpiry) > now;
+
+            // Hide the button entirely for VIP users (auto mode handles reset)
+            if (isVip) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'flex';
+
+            const COOLDOWN_MS = 20 * 60 * 1000; // 20 min for regular users
+            const lastReset = userData.lastTaskReset || 0;
+            const elapsed = Date.now() - lastReset;
+            const remaining = Math.max(0, COOLDOWN_MS - elapsed);
+
+            if (remaining > 0) {
+                btn.disabled = true;
+                const mins = Math.floor(remaining / 60000);
+                const secs = Math.ceil((remaining % 60000) / 1000);
+                btn.textContent = `⏳ ${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+                subText.textContent = 'မိနစ် 20 ကြာမှ ထပ်သုံးနိုင်သည်';
+            } else {
+                btn.disabled = false;
+                btn.textContent = 'Reset';
+                subText.textContent = 'Home (1-4) + Earn (1-7) task အားလုံး ပြန်စသည်';
+            }
+        }
+
+        function startResetTaskCountdown(userData) {
+            if (resetTaskCooldownInterval) clearInterval(resetTaskCooldownInterval);
+            resetTaskCooldownInterval = setInterval(() => {
+                if (userDataCache) updateResetTaskUI(userDataCache);
+            }, 1000);
+        }
+
+        async function handleResetTask() {
+            const btn = document.getElementById('resetTaskBtn');
+            if (!btn || btn.disabled) return;
+            btn.disabled = true;
+            btn.textContent = '...';
+
+            try {
+                const res = await fetch(`${API_BASE}/user/reset-tasks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData }
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showHomeToast('✅ Task အားလုံး Reset ပြီးပါပြီ!', 'success', 3000);
+                    if (userDataCache) {
+                        userDataCache.lastTaskReset = data.lastTaskReset;
+                        userDataCache.tasks = {};
+                    }
+                    updateResetTaskUI(userDataCache);
+                    fetchUser();
+                } else {
+                    showHomeToast(data.error || 'Reset မအောင်မြင်ပါ', 'error', 3000);
+                    if (userDataCache) updateResetTaskUI(userDataCache);
+                }
+            } catch(e) {
+                showHomeToast('Network error', 'error', 3000);
+                if (userDataCache) updateResetTaskUI(userDataCache);
+            }
         }
 
         async function fetchUser() {

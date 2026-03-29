@@ -155,9 +155,9 @@
         <h3>✅ အားလုံးပြီးပါပြီ!</h3>
         <p>Task အားလုံး 4/4 ပြည့်သွားပြီ</p>
         <div id="resetTimerBox" style="margin-top:12px;display:none;">
-            <div style="font-size:13px;color:#8e8e9d;margin-bottom:6px;">⏰ 0/4 ပြန်စရန် ကျန်ချိန်</div>
+            <div style="font-size:13px;color:#8e8e9d;margin-bottom:6px;">⏰ Reset ချိန် ကျန်ချိန်</div>
             <div id="resetTimerDisplay" style="font-size:28px;font-weight:800;color:#ffd700;letter-spacing:2px;">10:00</div>
-            <div style="font-size:11px;color:#8e8e9d;margin-top:4px;">10 မိနစ်ပြည့်ရင် counter ပြန်ဆြတ်မည်</div>
+            <div style="font-size:11px;color:#8e8e9d;margin-top:4px;">10 မိနစ်ပြည့်ရင် Task အားလုံး Auto Reset မည်</div>
         </div>
     </div>
 
@@ -444,11 +444,10 @@ async function runAutoLoop() {
         });
 
         if (allFull) {
-            // All earn tasks 4/4 — navigate to home tab to watch home ads while earn resets
-            document.getElementById('autoStatusText').textContent = 'အားလုံးပြည့်ပြီ! Home tab သို့ ပြန်သွားနေသည်...';
+            // All 7 earn tasks 4/4 — wait 10 min (VIP cooldown), then global reset & go home
+            document.getElementById('autoStatusText').textContent = 'အားလုံးပြည့်ပြီ! Reset ကို စောင့်နေသည်...';
             document.getElementById('allDoneBox').classList.add('show');
-            await sleep(2500);
-            window.location.href = '/';
+            await waitForVipAutoReset();
             return;
         }
 
@@ -536,6 +535,50 @@ function stopAutoWatch() {
 // ==================== Reset Timer ====================
 let resetTimerInterval = null;
 let resetTriggeredForCycle = false; // prevent multiple reset calls per cycle
+
+// ==================== VIP Auto: 10-min countdown then global reset → home ====================
+async function waitForVipAutoReset() {
+    const RESET_COOLDOWN = 10 * 60 * 1000; // 10 min for VIP
+    const startWait = Date.now();
+    const resetTimerBox = document.getElementById('resetTimerBox');
+    const resetTimerDisplay = document.getElementById('resetTimerDisplay');
+
+    if (resetTimerBox) resetTimerBox.style.display = 'block';
+
+    // Countdown display
+    const countdownTick = setInterval(() => {
+        const remaining = Math.max(0, RESET_COOLDOWN - (Date.now() - startWait));
+        const mins = Math.floor(remaining / 60000);
+        const secs = Math.ceil((remaining % 60000) / 1000);
+        if (resetTimerDisplay) {
+            resetTimerDisplay.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+            resetTimerDisplay.style.color = remaining <= 30000 ? '#3cba92' : '#ffd700';
+        }
+        if (remaining <= 0) clearInterval(countdownTick);
+    }, 1000);
+
+    await sleep(RESET_COOLDOWN);
+    clearInterval(countdownTick);
+
+    if (autoWatchStopped) return;
+
+    // Call global reset API
+    try {
+        const res = await fetch(`${API_BASE}/user/reset-tasks`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData }
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showToast('🔄 Task Reset ပြီးပါပြီ! Home tab ပြန်သွားနေသည်...', 'success', 3000);
+        }
+    } catch(e) {
+        console.error('Global reset error:', e);
+    }
+
+    await sleep(2000);
+    if (!autoWatchStopped) window.location.href = '/';
+}
 
 async function triggerTaskReset(taskId) {
     try {
