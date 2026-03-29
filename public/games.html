@@ -529,6 +529,16 @@
         if (tg) {
             tg.expand();
             tg.ready();
+        // Wait for Telegram initData (async injection fix)
+        function getInitData() { return window.Telegram?.WebApp?.initData || ''; }
+        async function waitForInitData(maxMs = 5000) {
+            const t = Date.now();
+            while (!getInitData() && Date.now() - t < maxMs) {
+                await new Promise(r => setTimeout(r, 100));
+            }
+            return getInitData();
+        }
+
             console.log('Telegram WebApp initialized');
         }
 

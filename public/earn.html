@@ -174,7 +174,17 @@
 const API_BASE = (window.__API_BASE__ || '') + '/api';
 const tg = window.Telegram?.WebApp;
 if (tg) { tg.expand(); tg.ready(); }
-const initData = tg?.initData || '';
+
+// Wait for Telegram initData to be injected
+function getInitData() { return window.Telegram?.WebApp?.initData || ''; }
+async function waitForInitData(maxMs = 5000) {
+    const t = Date.now();
+    while (!getInitData() && Date.now() - t < maxMs) {
+        await new Promise(r => setTimeout(r, 100));
+    }
+    return getInitData();
+}
+let initData = getInitData();
 
 let currentUser = null;
 let activeTaskId = null;
@@ -495,6 +505,9 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 // ==================== Fetch ====================
 async function fetchUser() {
     try {
+        const live = await waitForInitData(5000);
+        if (!live) { setTimeout(fetchUser, 1000); return; }
+        initData = live;
         const res = await fetch(`${API_BASE}/user`, { headers: { 'X-Telegram-Init-Data': initData } });
         const data = await res.json();
         if (res.ok) {
@@ -505,13 +518,16 @@ async function fetchUser() {
                 await fetchTaskStatus();
                 startAutoWatch();
             }
+        } else if (res.status === 401 || res.status === 403) {
+            setTimeout(fetchUser, 1500);
         }
-    } catch(e) { console.error('fetchUser error:', e); }
+    } catch(e) { console.error('fetchUser error:', e); setTimeout(fetchUser, 2000); }
 }
 
 async function fetchTaskStatus() {
     try {
-        const res = await fetch(`${API_BASE}/earn/tasks/status`, { headers: { 'X-Telegram-Init-Data': initData } });
+        const live = initData || await waitForInitData(5000);
+        const res = await fetch(`${API_BASE}/earn/tasks/status`, { headers: { 'X-Telegram-Init-Data': live } });
         const data = await res.json();
         if (res.ok && data.success) {
             taskStatus = data.tasks;

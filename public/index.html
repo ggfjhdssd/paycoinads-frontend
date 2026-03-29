@@ -508,12 +508,34 @@
         })();
 
         const API_BASE = (window.__API_BASE__ || '') + '/api';
+
+        // ── Telegram WebApp init ──────────────────────────────
         const tg = window.Telegram?.WebApp;
-        if (tg) { tg.expand(); tg.ready(); }
-        const initData = tg?.initData || '';
+        if (tg) {
+            tg.expand();
+            tg.ready();
+            // Lock portrait on mobile
+            if (tg.setHeaderColor) tg.setHeaderColor('#05070a');
+            if (tg.setBackgroundColor) tg.setBackgroundColor('#05070a');
+        }
+
+        // Wait until initData is available (Telegram injects it async sometimes)
+        function getInitData() {
+            return window.Telegram?.WebApp?.initData || '';
+        }
+        async function waitForInitData(maxWaitMs = 5000) {
+            const start = Date.now();
+            while (!getInitData() && Date.now() - start < maxWaitMs) {
+                await new Promise(r => setTimeout(r, 100));
+            }
+            return getInitData();
+        }
+
+        const initData = getInitData(); // sync fallback
         let currentUserId = null;
         let userDataCache = null;
         let vipScreenshotData = null;
+        let vipScreenshotFile = null;
         let selectedVipMethod = 'kpay';
 
         let AdController = null;
@@ -879,17 +901,29 @@
 
         async function fetchUser() {
             try {
+                // Wait for Telegram initData (may take a moment to inject)
+                const liveInitData = await waitForInitData(5000);
+                if (!liveInitData) {
+                    console.warn('initData not available — retrying in 1s');
+                    setTimeout(fetchUser, 1000);
+                    return;
+                }
                 const res = await fetch(`${API_BASE}/user`, {
-                    headers: { 'X-Telegram-Init-Data': initData }
+                    headers: { 'X-Telegram-Init-Data': liveInitData }
                 });
                 const data = await res.json();
                 if (res.ok) {
                     updateUI(data);
                 } else {
                     console.error('API error:', data.error);
+                    // Retry once on auth errors (initData timing issue)
+                    if (res.status === 401 || res.status === 403) {
+                        setTimeout(fetchUser, 1500);
+                    }
                 }
             } catch (err) { 
                 console.error('Network error:', err);
+                setTimeout(fetchUser, 2000);
             }
         }
 
