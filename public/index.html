@@ -508,17 +508,7 @@
         let vipScreenshotData = null;
         let selectedVipMethod = 'kpay';
 
-        let AdController = null;
-        try {
-            if (window.Adsgram) {
-                AdController = window.Adsgram.init({ blockId: "23898" });
-                console.log('✅ Adsgram initialized with blockId 23898');
-            } else {
-                console.warn('Adsgram SDK not loaded');
-            }
-        } catch (e) {
-            console.error('Failed to initialize Adsgram:', e);
-        }
+        // AdController removed — using task-specific controllers via getHomeAdCtrl()
 
         // ==================== VIP 1-hour session tracker ====================
         const VIP_SESSION_KEY = 'vipAutoStart';
@@ -942,33 +932,89 @@
 
         async function showAdAndReward(taskType, taskId = null) {
             if (!currentUserId) { showHomeToast('User data ရယူနေဆဲ...', 'error'); return; }
-            if (!AdController) { showHomeToast('Adsgram ချိတ်ဆက်မရပါ', 'error'); return; }
+
+            // ── Cooldown pre-check (prevent showing ad when still on cooldown) ──
+            if (taskId && userDataCache) {
+                const taskCooldown = 15 * 60 * 1000;
+                const lastClaim = userDataCache.tasks?.[taskId] || 0;
+                const remaining = taskCooldown - (Date.now() - lastClaim);
+                if (remaining > 0) {
+                    const mins = Math.ceil(remaining / 60000);
+                    showHomeToast(`⏳ ${mins} မိနစ်ကြာမှ ထပ်ကြည့်နိုင်သည်`, 'error', 3000);
+                    return;
+                }
+            }
+            if (taskType === 'daily' && userDataCache) {
+                const dailyCooldown = 24 * 60 * 60 * 1000;
+                const remaining = dailyCooldown - (Date.now() - (userDataCache.dailyLastClaim || 0));
+                if (remaining > 0) {
+                    showHomeToast('Daily check-in cooldown မကုန်သေးပါ', 'error', 3000);
+                    return;
+                }
+            }
+
+            // ── Get task-specific controller ──
+            let blockId = '23898'; // default for daily
+            if (taskId && HOME_TASK_BLOCK_IDS[taskId]) blockId = HOME_TASK_BLOCK_IDS[taskId];
+            const ctrl = getHomeAdCtrl(blockId);
+            if (!ctrl) { showHomeToast('Adsgram ချိတ်ဆက်မရပါ', 'error'); return; }
+
+            // ── Disable the clicked button immediately ──
+            let clickedBtn = null;
+            if (taskId) {
+                clickedBtn = document.querySelector(`.task-btn[data-id="${taskId}"]`);
+            } else if (taskType === 'daily') {
+                clickedBtn = document.getElementById('dailyBtn');
+            }
+            if (clickedBtn) { clickedBtn.disabled = true; clickedBtn.innerText = '⏳...'; }
+
             try {
-                const result = await AdController.show();
+                const result = await ctrl.show();
                 console.log('Ad finished:', result);
+
+                // ── Require ad to be completed ──
+                if (!result || result.done === false) {
+                    showHomeToast('ကြော်ငြာကို အပြည့်ကြည့်ရမည်', 'error');
+                    if (clickedBtn) { clickedBtn.disabled = false; clickedBtn.innerText = taskType === 'daily' ? 'Check-in' : 'Get +45'; }
+                    return;
+                }
+
                 let url = `${API_BASE}/adsgram-reward?userId=${currentUserId}&type=${taskType}`;
                 if (taskId) url += `&taskId=${taskId}&source=home`;
                 const rewardRes = await fetch(url);
                 if (rewardRes.ok) {
                     const rewardText = await rewardRes.text();
                     if (rewardText === 'OK') {
-                        const reward = taskType === 'daily' ? 24 : 50;
+                        const reward = taskType === 'daily' ? 24 : 45;
                         showHomeToast(`✅ +${reward} Coins ရရှိပြီး!`, 'success', 3000);
-                        fetchUser();
+                        // Immediately update cache so countdown starts right away
+                        if (taskId && userDataCache) {
+                            if (!userDataCache.tasks) userDataCache.tasks = {};
+                            userDataCache.tasks[taskId] = Date.now();
+                        }
+                        if (taskType === 'daily' && userDataCache) {
+                            userDataCache.dailyLastClaim = Date.now();
+                        }
+                        fetchUser(); // sync with server in background
                     } else {
                         showHomeToast('Coins ထည့်ရာတွင် ပြဿနာရှိသည်', 'error');
+                        if (clickedBtn) { clickedBtn.disabled = false; clickedBtn.innerText = taskType === 'daily' ? 'Check-in' : 'Get +45'; }
                     }
                 } else {
                     const errTxt = await rewardRes.text();
                     if (rewardRes.status === 400 && errTxt.includes('cooldown')) {
-                        showHomeToast('Cooldown မကုန်သေးပါ', 'error');
+                        showHomeToast('Cooldown မကုန်သေးပါ - နည်းနည်းစောင့်ပါ', 'error', 4000);
+                        // Refresh from server to get accurate cooldown
+                        fetchUser();
                     } else {
                         showHomeToast('Coins ထည့်ရာတွင် ပြဿနာရှိသည်', 'error');
+                        if (clickedBtn) { clickedBtn.disabled = false; clickedBtn.innerText = taskType === 'daily' ? 'Check-in' : 'Get +45'; }
                     }
                 }
             } catch (error) {
                 console.error('Ad error:', error);
                 showHomeToast('ကြော်ငြာကို အပြည့်ကြည့်ရမည်', 'error');
+                if (clickedBtn) { clickedBtn.disabled = false; clickedBtn.innerText = taskType === 'daily' ? 'Check-in' : 'Get +45'; }
             }
         }
 
