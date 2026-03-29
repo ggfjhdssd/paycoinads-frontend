@@ -824,6 +824,14 @@
             setTimeout(() => document.body.removeChild(toast), 3000);
         }
 
+        function fmtMs(ms) {
+            if (ms <= 0) return '';
+            const totalSecs = Math.ceil(ms / 1000);
+            const m = Math.floor(totalSecs / 60);
+            const s = totalSecs % 60;
+            return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+        }
+
         function applyCooldowns(data) {
             const now = Date.now();
             
@@ -835,12 +843,11 @@
             const dailyBtn = document.getElementById('dailyBtn');
             if (dailyRemaining > 0) {
                 dailyBtn.disabled = true;
-                
+                dailyBtn.innerText = '⏳ ' + fmtMs(dailyRemaining);
             } else {
                 dailyBtn.disabled = false;
                 dailyBtn.innerText = 'Check-in';
             }
-            
             
             const taskCooldown = 15 * 60 * 1000; // 15 minutes
             document.querySelectorAll('.task-btn').forEach(btn => {
@@ -850,7 +857,7 @@
                 
                 if (taskRemaining > 0) {
                     btn.disabled = true;
-                    
+                    btn.innerText = '⏳ ' + fmtMs(taskRemaining);
                 } else {
                     btn.disabled = false;
                     btn.innerText = 'Get +45';
@@ -872,7 +879,7 @@
                     
                     if (dailyRemaining > 0) {
                         dailyBtn.disabled = true;
-                        dailyBtn.innerText = formatTime(dailyRemaining);
+                        dailyBtn.innerText = '⏳ ' + fmtMs(dailyRemaining);
                     } else {
                         dailyBtn.disabled = false;
                         dailyBtn.innerText = 'Check-in';
@@ -887,7 +894,7 @@
                         
                         if (taskRemaining > 0) {
                             btn.disabled = true;
-                            btn.innerText = formatTime(taskRemaining);
+                            btn.innerText = '⏳ ' + fmtMs(taskRemaining);
                         } else {
                             btn.disabled = false;
                             btn.innerText = 'Get +45';
