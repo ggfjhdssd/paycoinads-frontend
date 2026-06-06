@@ -355,11 +355,22 @@
     <script>
         const API_BASE = (window.__API_BASE__ || '') + '/api';
         const tg = window.Telegram?.WebApp;
-        if (tg) { tg.expand(); tg.ready(); }
+        if (tg) { tg.expand(); tg.ready();
+        // Wait for Telegram initData (async injection fix)
+        function getInitData() { return window.Telegram?.WebApp?.initData || ''; }
+        async function waitForInitData(maxMs = 5000) {
+            const t = Date.now();
+            while (!getInitData() && Date.now() - t < maxMs) {
+                await new Promise(r => setTimeout(r, 100));
+            }
+            return getInitData();
+        }
+ }
         const initData = tg?.initData || '';
         let currentUserId = null;
         let coins = 0;
         let spinTickets = 0;
+        let wheelCurrentDeg = 0; // track accumulated wheel rotation
         let adWatchCount = 0;
         let lastAdWatch = 0;          // Timestamp of last ad watch (for 3s cooldown)
         let adCooldownEndTime = 0;     // Timestamp when 2-hour cooldown ends
@@ -629,10 +640,18 @@
                     }
 
                     const segmentAngle = 45;
-                    const offset = 22.5;
-                    const targetRotation = 360 - (prizeIndex * segmentAngle + offset);
+                    // offset = half segment (22.5) + CSS-to-top correction (90)
+                    const offset = 22.5 + 90; // = 112.5
+                    // Normalize current rotation
+                    const currentDeg = wheelCurrentDeg % 360;
+                    // Target angle to bring prizeIndex segment under top pointer
+                    const targetDeg = 360 - (prizeIndex * segmentAngle + offset);
+                    // Calculate delta to reach target, always spinning forward
+                    let delta = ((targetDeg - currentDeg) % 360 + 360) % 360;
+                    if (delta < 45) delta += 360; // ensure visible spin
                     const spins = 5;
-                    const totalRotation = targetRotation + (360 * spins);
+                    const totalRotation = wheelCurrentDeg + delta + (360 * spins);
+                    wheelCurrentDeg = totalRotation;
 
                     wheelDiv.style.transform = `rotate(${totalRotation}deg)`;
 
