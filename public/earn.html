@@ -283,7 +283,12 @@ function fmtTime(ms) {
     return `${s}s`;
 }
 
-function renderTasks() {
+function renderTasks(statusData) {
+    if (statusData) window._taskStatusData = statusData;
+    const cfg = window._earnCfg || {};
+    const watchReadyTxt = cfg.EARN_WATCH_LABEL || 'ကြည့်ရန် အသင့်';
+    const rewardSuffix = cfg.EARN_REWARD_LABEL ? cfg.EARN_REWARD_LABEL.replace(/^\+?\d+/, '') : '🪙';
+
     let html = '';
     TASK_CONFIGS.forEach(task => {
         const s = taskStatus[task.id] || { currentCount: 0, maxCount: 4, reward: 40, watchCooldownRemaining: 0, dailyResetIn: 0 };
@@ -293,12 +298,22 @@ function renderTasks() {
         const isActive = activeTaskId === task.id;
         const disabled = full || onCooldown || !!activeTaskId;
 
+        const rewardNum = s.reward || 40;
+        // Build reward display from config label or fallback
+        let rewardDisplay;
+        if (cfg.EARN_REWARD_LABEL) {
+            // Replace number in label with actual reward
+            rewardDisplay = cfg.EARN_REWARD_LABEL.replace(/\d+/, rewardNum);
+        } else {
+            rewardDisplay = `+${rewardNum} 🪙`;
+        }
+
         let counterClass = full ? 'full' : (s.currentCount > 0 ? 'partial' : 'empty');
         let statusTxt = '';
         if (full && s.dailyResetIn > 0) statusTxt = `⏰ ${fmtTime(s.dailyResetIn)} နောက် reset`;
         else if (full) statusTxt = '✅ ပြီးပါပြီ';
         else if (onCooldown) statusTxt = `⏳ ${fmtTime(s.watchCooldownRemaining)} ကြာဆက်ကြည့်`;
-        else statusTxt = 'ကြည့်ရန် အသင့်';
+        else statusTxt = watchReadyTxt;
 
         let btnTxt = 'Watch';
         let btnClass = '';
@@ -310,7 +325,7 @@ function renderTasks() {
         html += `
         <div class="task-card ${isActive && isAutoWatching ? 'vip-active' : ''}">
             <div class="task-icon">${task.icon}</div>
-            <div class="task-reward">+${s.reward || 40} 🪙</div>
+            <div class="task-reward">${rewardDisplay}</div>
             <div class="task-counter ${counterClass}">${s.currentCount}/${s.maxCount}</div>
             <div class="task-status">${statusTxt}</div>
             <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
@@ -725,9 +740,23 @@ setInterval(() => {
     }
 }, 1000);
 
+// ==================== UI Config ====================
+async function fetchEarnUIConfig() {
+    try {
+        const res = await fetch(`${API_BASE}/ui-config`);
+        if (!res.ok) return;
+        const cfg = await res.json();
+        window._earnCfg = cfg;
+        // Earn reward/watch labels are applied inside renderTasks()
+        // Re-render tasks with new labels if already loaded
+        if (window._taskStatusData) renderTasks(window._taskStatusData);
+    } catch(e) { console.error('earn ui config error:', e); }
+}
+
 // Init
 (async function init() {
     await fetchUser();
+    await fetchEarnUIConfig();
     await fetchTaskStatus();
     setInterval(fetchTaskStatus, 30000);
 })();

@@ -297,13 +297,13 @@
             <div class="invite-box">
                 <div class="small-text">သူငယ်ချင်းများကို</div>
                 <div class="big-number">ဖိတ်<span>ပြီး</span></div>
-                <div class="small-text">50🪙 ရယူပါ</div>
+                <div class="small-text" id="inviteRewardText">50🪙 ရယူပါ</div>
             </div>
         </div>
 
         <div id="homeSection" class="section active">
             <!-- VIP Mode Toggle -->
-            <div class="vip-toggle-row" id="vipToggleRow" onclick="handleVipToggle()">
+            <div class="vip-toggle-row" id="vipToggleRow" onclick="handleVipToggle()" style="">
                 <div class="vip-toggle-left">
                     <div class="icon">👑</div>
                     <div>
@@ -326,13 +326,13 @@
 
             <div class="task-card">
                 <div class="task-icon">🔥</div>
-                <div class="task-info"><h4>Daily Check-in</h4><p>+24 coins (Watch Ad)</p></div>
+                <div class="task-info"><h4 id="dailyCheckinLabel">Daily Check-in</h4><p id="dailyCheckinRewardLabel">+24 coins (Watch Ad)</p></div>
                 <button class="btn-modern" id="dailyBtn">Check-in</button>
             </div>
-            <div class="task-card"><div class="task-icon">🪙</div><div class="task-info"><h4>Task 1</h4><p>+45 coins (Watch Ad)</p></div><button class="btn-modern task-btn" data-id="task1">Get +45</button></div>
-            <div class="task-card"><div class="task-icon">🪙</div><div class="task-info"><h4>Task 2</h4><p>+45 coins (Watch Ad)</p></div><button class="btn-modern task-btn" data-id="task2">Get +45</button></div>
-            <div class="task-card"><div class="task-icon">🪙</div><div class="task-info"><h4>Task 3</h4><p>+45 coins (Watch Ad)</p></div><button class="btn-modern task-btn" data-id="task3">Get +45</button></div>
-            <div class="task-card"><div class="task-icon">🪙</div><div class="task-info"><h4>Task 4</h4><p>+45 coins (Watch Ad)</p></div><button class="btn-modern task-btn" data-id="task4">Get +45</button></div>
+            <div class="task-card"><div class="task-icon">🪙</div><div class="task-info"><h4 id="task1Label">Task 1</h4><p id="task1RewardLabel">+45 coins (Watch Ad)</p></div><button class="btn-modern task-btn" data-id="task1" id="task1Btn">Get +45</button></div>
+            <div class="task-card"><div class="task-icon">🪙</div><div class="task-info"><h4 id="task2Label">Task 2</h4><p id="task2RewardLabel">+45 coins (Watch Ad)</p></div><button class="btn-modern task-btn" data-id="task2" id="task2Btn">Get +45</button></div>
+            <div class="task-card"><div class="task-icon">🪙</div><div class="task-info"><h4 id="task3Label">Task 3</h4><p id="task3RewardLabel">+45 coins (Watch Ad)</p></div><button class="btn-modern task-btn" data-id="task3" id="task3Btn">Get +45</button></div>
+            <div class="task-card"><div class="task-icon">🪙</div><div class="task-info"><h4 id="task4Label">Task 4</h4><p id="task4RewardLabel">+45 coins (Watch Ad)</p></div><button class="btn-modern task-btn" data-id="task4" id="task4Btn">Get +45</button></div>
 
             <!-- Reset Task Section (shown for non-VIP users only) -->
             <div class="reset-task-section" id="resetTaskSection" style="display:none;">
@@ -575,24 +575,30 @@
         const navItems = document.querySelectorAll('.nav-item');
         const sections = document.querySelectorAll('.section');
         
+        const greetingCard = document.getElementById('inviteBox');
+
+        function switchTab(tab) {
+            if (tab === 'earn') { window.location.href = '/earn.html'; return; }
+            if (tab === 'games') { window.location.href = '/games.html'; return; }
+
+            navItems.forEach(i => i.classList.remove('active'));
+            sections.forEach(s => s.classList.remove('active'));
+
+            const activeNav = document.querySelector(`.nav-item[data-tab="${tab}"]`);
+            if (activeNav) activeNav.classList.add('active');
+
+            const sectionEl = document.getElementById(tab + 'Section');
+            if (sectionEl) sectionEl.classList.add('active');
+
+            // Hide greeting card on profile tab, show on home/earn/games
+            if (greetingCard) {
+                greetingCard.style.display = (tab === 'profile') ? 'none' : '';
+            }
+        }
+
         navItems.forEach(item => {
             item.addEventListener('click', (e) => {
-                const tab = item.dataset.tab;
-                
-                if (tab === 'earn') {
-                    window.location.href = '/earn.html';
-                    return;
-                }
-                
-                if (tab === 'games') {
-                    window.location.href = '/games.html';
-                    return;
-                }
-                
-                navItems.forEach(i => i.classList.remove('active'));
-                sections.forEach(s => s.classList.remove('active'));
-                item.classList.add('active');
-                document.getElementById(tab + 'Section').classList.add('active');
+                switchTab(item.dataset.tab);
             });
         });
 
@@ -1257,7 +1263,88 @@
         document.querySelector('.earn-invite').addEventListener('click', shareInvite);
         document.querySelector('.games-invite').addEventListener('click', shareInvite);
 
+        // ==================== UI Config from Admin ====================
+        async function fetchUIConfig() {
+            try {
+                const res = await fetch(`${API_BASE}/ui-config`);
+                if (!res.ok) return;
+                const cfg = await res.json();
+
+                // 1. VIP Card visibility
+                const vipRow = document.getElementById('vipToggleRow');
+                if (vipRow) {
+                    vipRow.style.display = cfg.VIP_CARD_VISIBLE === false ? 'none' : '';
+                }
+
+                // 2. Currency mode: swap 🪙 → ကျပ် everywhere
+                const isMmk = cfg.CURRENCY_MODE === 'mmk';
+                const coinSymbol = isMmk ? 'ကျပ်' : '🪙';
+
+                // totalCoins display area
+                const totalCoinsEl = document.getElementById('totalCoins');
+                if (totalCoinsEl) {
+                    const parent = totalCoinsEl.parentElement;
+                    if (parent) {
+                        // Replace the coin emoji text node after the balance number
+                        parent.childNodes.forEach(node => {
+                            if (node.nodeType === 3 && node.textContent.includes('🪙')) {
+                                node.textContent = node.textContent.replace('🪙', isMmk ? 'ကျပ်' : '🪙');
+                            }
+                        });
+                    }
+                }
+
+                // Profile coins label
+                const profileCoinsEl = document.getElementById('profileCoins');
+                if (profileCoinsEl) {
+                    const statItem = profileCoinsEl.closest('.stat-item');
+                    if (statItem) {
+                        statItem.innerHTML = `<span>လက်ကျန်ငွေ</span><b id="profileCoins">${profileCoinsEl.textContent}</b> ${coinSymbol}`;
+                    }
+                }
+
+                // Invite box reward text
+                const inviteText = document.getElementById('inviteRewardText');
+                if (inviteText) {
+                    const reward = cfg.REFERRAL_REWARD || 50;
+                    inviteText.textContent = isMmk ? `${reward}ကျပ် ရယူပါ` : `${reward}🪙 ရယူပါ`;
+                }
+
+                // 3. Home tab task labels
+                const setTxt = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
+                setTxt('dailyCheckinLabel',       cfg.DAILY_CHECKIN_LABEL);
+                setTxt('dailyCheckinRewardLabel', cfg.DAILY_CHECKIN_REWARD_LABEL);
+                setTxt('task1Label',    cfg.TASK1_LABEL);
+                setTxt('task1RewardLabel', cfg.TASK1_REWARD_LABEL);
+                setTxt('task2Label',    cfg.TASK2_LABEL);
+                setTxt('task2RewardLabel', cfg.TASK2_REWARD_LABEL);
+                setTxt('task3Label',    cfg.TASK3_LABEL);
+                setTxt('task3RewardLabel', cfg.TASK3_REWARD_LABEL);
+                setTxt('task4Label',    cfg.TASK4_LABEL);
+                setTxt('task4RewardLabel', cfg.TASK4_REWARD_LABEL);
+
+                // Task button labels (only if not in disabled/countdown state)
+                const setBtn = (id, val) => {
+                    const btn = document.getElementById(id);
+                    if (btn && val && !btn.disabled && !btn.textContent.includes('⏳') && !btn.textContent.includes('✅')) {
+                        btn.textContent = val;
+                    }
+                };
+                setBtn('task1Btn', cfg.TASK1_BTN_LABEL);
+                setBtn('task2Btn', cfg.TASK2_BTN_LABEL);
+                setBtn('task3Btn', cfg.TASK3_BTN_LABEL);
+                setBtn('task4Btn', cfg.TASK4_BTN_LABEL);
+
+                // Store config globally for reuse
+                window._uiCfg = cfg;
+
+            } catch (err) {
+                console.error('UI config error:', err);
+            }
+        }
+
         fetchUser();
+        fetchUIConfig();
         setInterval(fetchUser, 60000); // Refresh every minute
         startLiveCountdown(); // Start live countdown timer
     </script>

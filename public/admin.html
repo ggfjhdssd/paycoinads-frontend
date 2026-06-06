@@ -818,6 +818,9 @@
         </div>
 
         <div id="settingsTab" class="content-card" style="display: none;">
+
+            <!-- ===== GENERAL SETTINGS ===== -->
+            <div style="color:#ffd700;font-weight:700;font-size:15px;margin-bottom:12px;">⚙️ General Settings</div>
             <div class="settings-grid" id="settingsForm">
                 <div class="setting-item">
                     <div class="setting-label">🎁 Referral Reward</div>
@@ -848,7 +851,102 @@
                     <input type="text" class="setting-input" id="MAINTENANCE_MESSAGE" value="Site is under maintenance.">
                 </div>
             </div>
-            <button class="galaxy-btn" onclick="saveSettings()">💾 Save Galaxy Settings</button>
+
+            <!-- ===== VIP CARD & CURRENCY ===== -->
+            <div style="color:#ffd700;font-weight:700;font-size:15px;margin:20px 0 12px;">👑 VIP Card & Currency</div>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <div class="setting-label">👑 VIP Card မြင်ရမလား</div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="VIP_CARD_VISIBLE">
+                        <span class="toggle-slider"></span>
+                        <span style="color:#8e8e9d;" id="vipCardStatus">On</span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">💱 Currency Mode</div>
+                    <select class="setting-input" id="CURRENCY_MODE" style="background:rgba(255,255,255,0.05);color:#e0e0f0;border:1px solid rgba(255,215,0,0.2);border-radius:10px;padding:10px;">
+                        <option value="coin">🪙 Coin Mode</option>
+                        <option value="mmk">ကျပ် MMK Mode</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- ===== HOME TAB TASK LABELS ===== -->
+            <div style="color:#ffd700;font-weight:700;font-size:15px;margin:20px 0 12px;">🏠 Home Tab Task Labels</div>
+            <div class="settings-grid">
+                <div class="setting-item" style="grid-column:1/-1">
+                    <div class="setting-label">🔥 Daily Check-in Title</div>
+                    <input type="text" class="setting-input" id="DAILY_CHECKIN_LABEL" value="Daily Check-in">
+                </div>
+                <div class="setting-item" style="grid-column:1/-1">
+                    <div class="setting-label">🔥 Daily Check-in Reward Text</div>
+                    <input type="text" class="setting-input" id="DAILY_CHECKIN_REWARD_LABEL" value="+24 coins (Watch Ad)">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">🪙 Task 1 Title</div>
+                    <input type="text" class="setting-input" id="TASK1_LABEL" value="Task 1">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">🪙 Task 1 Reward Text</div>
+                    <input type="text" class="setting-input" id="TASK1_REWARD_LABEL" value="+45 coins (Watch Ad)">
+                </div>
+                <div class="setting-item" style="grid-column:1/-1">
+                    <div class="setting-label">🪙 Task 1 Button Label</div>
+                    <input type="text" class="setting-input" id="TASK1_BTN_LABEL" value="Get +45">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">🪙 Task 2 Title</div>
+                    <input type="text" class="setting-input" id="TASK2_LABEL" value="Task 2">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">🪙 Task 2 Reward Text</div>
+                    <input type="text" class="setting-input" id="TASK2_REWARD_LABEL" value="+45 coins (Watch Ad)">
+                </div>
+                <div class="setting-item" style="grid-column:1/-1">
+                    <div class="setting-label">🪙 Task 2 Button Label</div>
+                    <input type="text" class="setting-input" id="TASK2_BTN_LABEL" value="Get +45">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">🪙 Task 3 Title</div>
+                    <input type="text" class="setting-input" id="TASK3_LABEL" value="Task 3">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">🪙 Task 3 Reward Text</div>
+                    <input type="text" class="setting-input" id="TASK3_REWARD_LABEL" value="+45 coins (Watch Ad)">
+                </div>
+                <div class="setting-item" style="grid-column:1/-1">
+                    <div class="setting-label">🪙 Task 3 Button Label</div>
+                    <input type="text" class="setting-input" id="TASK3_BTN_LABEL" value="Get +45">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">🪙 Task 4 Title</div>
+                    <input type="text" class="setting-input" id="TASK4_LABEL" value="Task 4">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">🪙 Task 4 Reward Text</div>
+                    <input type="text" class="setting-input" id="TASK4_REWARD_LABEL" value="+45 coins (Watch Ad)">
+                </div>
+                <div class="setting-item" style="grid-column:1/-1">
+                    <div class="setting-label">🪙 Task 4 Button Label</div>
+                    <input type="text" class="setting-input" id="TASK4_BTN_LABEL" value="Get +45">
+                </div>
+            </div>
+
+            <!-- ===== EARN TAB LABELS ===== -->
+            <div style="color:#ffd700;font-weight:700;font-size:15px;margin:20px 0 12px;">💰 Earn Tab Labels</div>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <div class="setting-label">🪙 Reward Badge Text</div>
+                    <input type="text" class="setting-input" id="EARN_REWARD_LABEL" value="+45🪙">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">▶️ Watch Ready Text</div>
+                    <input type="text" class="setting-input" id="EARN_WATCH_LABEL" value="ကြည့်ရန် အသင့်">
+                </div>
+            </div>
+
+            <button class="galaxy-btn" onclick="saveSettings()" style="margin-top:24px;">💾 Save All Settings</button>
         </div>
 
         <!-- Broadcast Tab -->
@@ -1316,14 +1414,41 @@
         async function loadSettings() {
             try {
                 const res = await fetch('/api/admin/settings', { headers: { 'X-Telegram-Init-Data': initData } });
-                const settings = await res.json();
-                document.getElementById('REFERRAL_REWARD').value = settings.REFERRAL_REWARD || 10;
-                document.getElementById('DAILY_REWARD').value = settings.DAILY_REWARD || 24;
-                document.getElementById('TASK_REWARD').value = settings.TASK_REWARD || 30;
-                document.getElementById('MIN_WITHDRAWAL').value = settings.MIN_WITHDRAWAL || 160000;
-                document.getElementById('MAINTENANCE_MODE').checked = settings.MAINTENANCE_MODE || false;
-                document.getElementById('MAINTENANCE_MESSAGE').value = settings.MAINTENANCE_MESSAGE || 'Site is under maintenance.';
-                document.getElementById('maintenanceStatus').textContent = settings.MAINTENANCE_MODE ? 'On' : 'Off';
+                const s = await res.json();
+                document.getElementById('REFERRAL_REWARD').value = s.REFERRAL_REWARD ?? 50;
+                document.getElementById('DAILY_REWARD').value = s.DAILY_REWARD ?? 24;
+                document.getElementById('TASK_REWARD').value = s.TASK_REWARD ?? 40;
+                document.getElementById('MIN_WITHDRAWAL').value = s.MIN_WITHDRAWAL ?? 100000;
+                document.getElementById('MAINTENANCE_MODE').checked = s.MAINTENANCE_MODE || false;
+                document.getElementById('MAINTENANCE_MESSAGE').value = s.MAINTENANCE_MESSAGE || 'Site is under maintenance.';
+                document.getElementById('maintenanceStatus').textContent = s.MAINTENANCE_MODE ? 'On' : 'Off';
+                // VIP Card & Currency
+                const vipVisible = s.VIP_CARD_VISIBLE !== false;
+                document.getElementById('VIP_CARD_VISIBLE').checked = vipVisible;
+                document.getElementById('vipCardStatus').textContent = vipVisible ? 'On' : 'Off';
+                document.getElementById('CURRENCY_MODE').value = s.CURRENCY_MODE || 'coin';
+                // Home task labels
+                document.getElementById('DAILY_CHECKIN_LABEL').value = s.DAILY_CHECKIN_LABEL || 'Daily Check-in';
+                document.getElementById('DAILY_CHECKIN_REWARD_LABEL').value = s.DAILY_CHECKIN_REWARD_LABEL || '+24 coins (Watch Ad)';
+                document.getElementById('TASK1_LABEL').value = s.TASK1_LABEL || 'Task 1';
+                document.getElementById('TASK1_REWARD_LABEL').value = s.TASK1_REWARD_LABEL || '+45 coins (Watch Ad)';
+                document.getElementById('TASK1_BTN_LABEL').value = s.TASK1_BTN_LABEL || 'Get +45';
+                document.getElementById('TASK2_LABEL').value = s.TASK2_LABEL || 'Task 2';
+                document.getElementById('TASK2_REWARD_LABEL').value = s.TASK2_REWARD_LABEL || '+45 coins (Watch Ad)';
+                document.getElementById('TASK2_BTN_LABEL').value = s.TASK2_BTN_LABEL || 'Get +45';
+                document.getElementById('TASK3_LABEL').value = s.TASK3_LABEL || 'Task 3';
+                document.getElementById('TASK3_REWARD_LABEL').value = s.TASK3_REWARD_LABEL || '+45 coins (Watch Ad)';
+                document.getElementById('TASK3_BTN_LABEL').value = s.TASK3_BTN_LABEL || 'Get +45';
+                document.getElementById('TASK4_LABEL').value = s.TASK4_LABEL || 'Task 4';
+                document.getElementById('TASK4_REWARD_LABEL').value = s.TASK4_REWARD_LABEL || '+45 coins (Watch Ad)';
+                document.getElementById('TASK4_BTN_LABEL').value = s.TASK4_BTN_LABEL || 'Get +45';
+                // Earn tab labels
+                document.getElementById('EARN_REWARD_LABEL').value = s.EARN_REWARD_LABEL || '+45🪙';
+                document.getElementById('EARN_WATCH_LABEL').value = s.EARN_WATCH_LABEL || 'ကြည့်ရန် အသင့်';
+                // toggle status
+                document.getElementById('VIP_CARD_VISIBLE').addEventListener('change', function() {
+                    document.getElementById('vipCardStatus').textContent = this.checked ? 'On' : 'Off';
+                });
             } catch (err) { console.error('Load settings error:', err); }
         }
 
@@ -1334,7 +1459,25 @@
                 TASK_REWARD: parseInt(document.getElementById('TASK_REWARD').value),
                 MIN_WITHDRAWAL: parseInt(document.getElementById('MIN_WITHDRAWAL').value),
                 MAINTENANCE_MODE: document.getElementById('MAINTENANCE_MODE').checked,
-                MAINTENANCE_MESSAGE: document.getElementById('MAINTENANCE_MESSAGE').value
+                MAINTENANCE_MESSAGE: document.getElementById('MAINTENANCE_MESSAGE').value,
+                VIP_CARD_VISIBLE: document.getElementById('VIP_CARD_VISIBLE').checked,
+                CURRENCY_MODE: document.getElementById('CURRENCY_MODE').value,
+                DAILY_CHECKIN_LABEL: document.getElementById('DAILY_CHECKIN_LABEL').value,
+                DAILY_CHECKIN_REWARD_LABEL: document.getElementById('DAILY_CHECKIN_REWARD_LABEL').value,
+                TASK1_LABEL: document.getElementById('TASK1_LABEL').value,
+                TASK1_REWARD_LABEL: document.getElementById('TASK1_REWARD_LABEL').value,
+                TASK1_BTN_LABEL: document.getElementById('TASK1_BTN_LABEL').value,
+                TASK2_LABEL: document.getElementById('TASK2_LABEL').value,
+                TASK2_REWARD_LABEL: document.getElementById('TASK2_REWARD_LABEL').value,
+                TASK2_BTN_LABEL: document.getElementById('TASK2_BTN_LABEL').value,
+                TASK3_LABEL: document.getElementById('TASK3_LABEL').value,
+                TASK3_REWARD_LABEL: document.getElementById('TASK3_REWARD_LABEL').value,
+                TASK3_BTN_LABEL: document.getElementById('TASK3_BTN_LABEL').value,
+                TASK4_LABEL: document.getElementById('TASK4_LABEL').value,
+                TASK4_REWARD_LABEL: document.getElementById('TASK4_REWARD_LABEL').value,
+                TASK4_BTN_LABEL: document.getElementById('TASK4_BTN_LABEL').value,
+                EARN_REWARD_LABEL: document.getElementById('EARN_REWARD_LABEL').value,
+                EARN_WATCH_LABEL: document.getElementById('EARN_WATCH_LABEL').value,
             };
             try {
                 const res = await fetch('/api/admin/settings', {
@@ -1343,7 +1486,7 @@
                     body: JSON.stringify(settings)
                 });
                 if (res.ok) {
-                    showToast('Settings saved to galaxy', 'success');
+                    showToast('Settings saved!', 'success');
                     loadSettings();
                 } else {
                     const err = await res.json();
