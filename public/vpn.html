@@ -296,8 +296,21 @@
             }
         }
 
-        // Auto check on page load
-        window.onload = checkVPN;
+        // Auto check on page load - first check if VPN mode is enabled
+        window.onload = async function() {
+            try {
+                const cfgRes = await fetch('/api/ui-config');
+                if (cfgRes.ok) {
+                    const cfg = await cfgRes.json();
+                    if (cfg.VPN_MODE === false) {
+                        // VPN mode ပိတ်ထားရင် တန်းဝင်ခွင့်ပေး
+                        window.location.href = '/';
+                        return;
+                    }
+                }
+            } catch(e) {}
+            checkVPN();
+        };
 
     </script>
 </body>

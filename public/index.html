@@ -276,8 +276,9 @@
                 </div>
             </div>
             <div class="glass-balance">
-                <span>🪙</span>
+                <span id="coinSymbolLeft">🪙</span>
                 <span id="totalCoins">0</span>
+                <span id="coinSymbolRight" style="display:none;">ကျပ်</span>
             </div>
         </div>
 
@@ -303,7 +304,7 @@
 
         <div id="homeSection" class="section active">
             <!-- VIP Mode Toggle -->
-            <div class="vip-toggle-row" id="vipToggleRow" onclick="handleVipToggle()" style="">
+            <div class="vip-toggle-row" id="vipToggleRow" onclick="handleVipToggle()" style="visibility:hidden;">
                 <div class="vip-toggle-left">
                     <div class="icon">👑</div>
                     <div>
@@ -343,6 +344,8 @@
                 <button class="reset-task-btn" id="resetTaskBtn" onclick="handleResetTask()">Reset</button>
             </div>
 
+        </div><!-- /homeSection -->
+
         <div id="earnSection" class="section">
             <div class="placeholder-box" onclick="window.location.href='/earn.html'" style="cursor: pointer;">
                 <h2 style="color:#ffd700; margin-bottom:10px;">💰 Watch & Earn</h2>
@@ -375,7 +378,7 @@
                 <div class="avatar-large" id="profileAvatar"></div>
                 <h2 id="profileUsername" style="font-weight: 700;">@username</h2>
                 <div class="stats-grid">
-                    <div class="stat-item"><span>လက်ကျန်ငွေ</span><b id="profileCoins">0</b> 🪙</div>
+                    <div class="stat-item"><span>လက်ကျန်ငွေ</span><b id="profileCoins">0</b> <span id="profileCoinSymbol">🪙</span></div>
                     <div class="stat-item"><span>ဖိတ်ခေါ်မှု</span><b id="referralCount">0</b></div>
                 </div>
                 <p style="margin-top: 15px; font-size: 12px; color: #5e5e71; font-weight: 500;">Joined: <span id="joinDate">-</span></p>
@@ -1269,39 +1272,38 @@
                 const res = await fetch(`${API_BASE}/ui-config`);
                 if (!res.ok) return;
                 const cfg = await res.json();
+                window._uiCfg = cfg;
 
-                // 1. VIP Card visibility
+                // 1. VIP Card visibility - remove visibility:hidden, then apply display
                 const vipRow = document.getElementById('vipToggleRow');
                 if (vipRow) {
+                    vipRow.style.visibility = '';
                     vipRow.style.display = cfg.VIP_CARD_VISIBLE === false ? 'none' : '';
                 }
 
-                // 2. Currency mode: swap 🪙 → ကျပ် everywhere
+                // 2. VPN Mode - if disabled, redirect away from vpn gate
+                window._vpnRequired = cfg.VPN_MODE !== false;
+
+                // 3. Currency mode
                 const isMmk = cfg.CURRENCY_MODE === 'mmk';
-                const coinSymbol = isMmk ? 'ကျပ်' : '🪙';
+                window._isMmk = isMmk;
 
-                // totalCoins display area
-                const totalCoinsEl = document.getElementById('totalCoins');
-                if (totalCoinsEl) {
-                    const parent = totalCoinsEl.parentElement;
-                    if (parent) {
-                        // Replace the coin emoji text node after the balance number
-                        parent.childNodes.forEach(node => {
-                            if (node.nodeType === 3 && node.textContent.includes('🪙')) {
-                                node.textContent = node.textContent.replace('🪙', isMmk ? 'ကျပ်' : '🪙');
-                            }
-                        });
+                // Header balance: show "🪙 1234" or "1234 ကျပ်"
+                const symLeft  = document.getElementById('coinSymbolLeft');
+                const symRight = document.getElementById('coinSymbolRight');
+                if (symLeft && symRight) {
+                    if (isMmk) {
+                        symLeft.style.display  = 'none';
+                        symRight.style.display = '';
+                    } else {
+                        symLeft.style.display  = '';
+                        symRight.style.display = 'none';
                     }
                 }
 
-                // Profile coins label
-                const profileCoinsEl = document.getElementById('profileCoins');
-                if (profileCoinsEl) {
-                    const statItem = profileCoinsEl.closest('.stat-item');
-                    if (statItem) {
-                        statItem.innerHTML = `<span>လက်ကျန်ငွေ</span><b id="profileCoins">${profileCoinsEl.textContent}</b> ${coinSymbol}`;
-                    }
-                }
+                // Profile coins symbol
+                const profileSym = document.getElementById('profileCoinSymbol');
+                if (profileSym) profileSym.textContent = isMmk ? 'ကျပ်' : '🪙';
 
                 // Invite box reward text
                 const inviteText = document.getElementById('inviteRewardText');
@@ -1310,7 +1312,7 @@
                     inviteText.textContent = isMmk ? `${reward}ကျပ် ရယူပါ` : `${reward}🪙 ရယူပါ`;
                 }
 
-                // 3. Home tab task labels
+                // 4. Home tab task labels
                 const setTxt = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
                 setTxt('dailyCheckinLabel',       cfg.DAILY_CHECKIN_LABEL);
                 setTxt('dailyCheckinRewardLabel', cfg.DAILY_CHECKIN_REWARD_LABEL);
@@ -1323,7 +1325,7 @@
                 setTxt('task4Label',    cfg.TASK4_LABEL);
                 setTxt('task4RewardLabel', cfg.TASK4_REWARD_LABEL);
 
-                // Task button labels (only if not in disabled/countdown state)
+                // Task button labels
                 const setBtn = (id, val) => {
                     const btn = document.getElementById(id);
                     if (btn && val && !btn.disabled && !btn.textContent.includes('⏳') && !btn.textContent.includes('✅')) {
@@ -1334,9 +1336,6 @@
                 setBtn('task2Btn', cfg.TASK2_BTN_LABEL);
                 setBtn('task3Btn', cfg.TASK3_BTN_LABEL);
                 setBtn('task4Btn', cfg.TASK4_BTN_LABEL);
-
-                // Store config globally for reuse
-                window._uiCfg = cfg;
 
             } catch (err) {
                 console.error('UI config error:', err);

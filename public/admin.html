@@ -852,6 +852,19 @@
                 </div>
             </div>
 
+            <!-- ===== VPN MODE ===== -->
+            <div style="color:#ffd700;font-weight:700;font-size:15px;margin:20px 0 12px;">🔒 VPN Mode</div>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <div class="setting-label">🔒 VPN Gate (On = VPN လိုအပ်သည်)</div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="VPN_MODE">
+                        <span class="toggle-slider"></span>
+                        <span style="color:#8e8e9d;" id="vpnModeStatus">On</span>
+                    </label>
+                </div>
+            </div>
+
             <!-- ===== VIP CARD & CURRENCY ===== -->
             <div style="color:#ffd700;font-weight:700;font-size:15px;margin:20px 0 12px;">👑 VIP Card & Currency</div>
             <div class="settings-grid">
@@ -1422,6 +1435,13 @@
                 document.getElementById('MAINTENANCE_MODE').checked = s.MAINTENANCE_MODE || false;
                 document.getElementById('MAINTENANCE_MESSAGE').value = s.MAINTENANCE_MESSAGE || 'Site is under maintenance.';
                 document.getElementById('maintenanceStatus').textContent = s.MAINTENANCE_MODE ? 'On' : 'Off';
+                // VPN Mode
+                const vpnOn = s.VPN_MODE !== false;
+                document.getElementById('VPN_MODE').checked = vpnOn;
+                document.getElementById('vpnModeStatus').textContent = vpnOn ? 'On' : 'Off';
+                document.getElementById('VPN_MODE').addEventListener('change', function() {
+                    document.getElementById('vpnModeStatus').textContent = this.checked ? 'On' : 'Off';
+                });
                 // VIP Card & Currency
                 const vipVisible = s.VIP_CARD_VISIBLE !== false;
                 document.getElementById('VIP_CARD_VISIBLE').checked = vipVisible;
@@ -1460,6 +1480,7 @@
                 MIN_WITHDRAWAL: parseInt(document.getElementById('MIN_WITHDRAWAL').value),
                 MAINTENANCE_MODE: document.getElementById('MAINTENANCE_MODE').checked,
                 MAINTENANCE_MESSAGE: document.getElementById('MAINTENANCE_MESSAGE').value,
+                VPN_MODE: document.getElementById('VPN_MODE').checked,
                 VIP_CARD_VISIBLE: document.getElementById('VIP_CARD_VISIBLE').checked,
                 CURRENCY_MODE: document.getElementById('CURRENCY_MODE').value,
                 DAILY_CHECKIN_LABEL: document.getElementById('DAILY_CHECKIN_LABEL').value,
